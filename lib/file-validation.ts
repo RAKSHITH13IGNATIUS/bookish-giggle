@@ -7,7 +7,7 @@
 export interface ValidationResult {
   valid: boolean;
   error?: string;
-  detectedType?: 'jpeg' | 'png' | 'webp' | 'pdf' | 'unknown';
+  detectedType?: 'jpeg' | 'png' | 'webp' | 'pdf' | 'heic' | 'unknown';
 }
 
 const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024; // 50 MB safety ceiling
@@ -16,8 +16,9 @@ const MAX_IMAGE_DIMENSION = 12000; // 12,000 px safety limit
 /**
  * Reads the first bytes of a file to determine its true binary signature
  */
-export async function detectMagicBytes(file: File): Promise<'jpeg' | 'png' | 'webp' | 'pdf' | 'unknown'> {
-  const buffer = await file.slice(0, 16).arrayBuffer();
+export async function detectMagicBytes(file: File): Promise<'jpeg' | 'png' | 'webp' | 'pdf' | 'heic' | 'unknown'> {
+  // Read first 64 bytes to cover ISOBMFF box headers and compatible brands
+  const buffer = await file.slice(0, 64).arrayBuffer();
   const bytes = new Uint8Array(buffer);
 
   // JPEG: FF D8 FF
@@ -58,6 +59,23 @@ export async function detectMagicBytes(file: File): Promise<'jpeg' | 'png' | 'we
     return 'pdf';
   }
 
+  // HEIC / HEIF: ISOBMFF container starting with 'ftyp' at offset 4
+  // 0x66 0x74 0x79 0x70
+  if (
+    bytes.length >= 12 &&
+    bytes[4] === 0x66 &&
+    bytes[5] === 0x74 &&
+    bytes[6] === 0x79 &&
+    bytes[7] === 0x70
+  ) {
+    // Decode ASCII slice from offset 8 to check major brand and compatible brands
+    const brandStr = String.fromCharCode(...Array.from(bytes.slice(8, Math.min(bytes.length, 64))));
+    const heicBrands = ['heic', 'heix', 'hevc', 'hevx', 'heim', 'heis', 'mif1', 'msf1'];
+    if (heicBrands.some((brand) => brandStr.includes(brand))) {
+      return 'heic';
+    }
+  }
+
   return 'unknown';
 }
 
@@ -95,6 +113,51 @@ export async function validateImageFile(
   }
 
   return { valid: true, detectedType };
+}
+
+/**
+ * Validates a HEIC / HEIF file for size ceiling, extension, and true ISOBMFF binary signature
+ */
+export async function validateHeicFile(file: File): Promise<ValidationResult> {
+  if (!file) {
+    return { valid: false, error: 'No file provided.' };
+  }
+
+  if (file.size === 0) {
+    return { valid: false, error: 'File is empty (0 bytes).' };
+  }
+
+  if (file.size > MAX_FILE_SIZE_BYTES) {
+    return {
+      valid: false,
+      error: `File exceeds maximum allowed size of 50 MB (${(file.size / (1024 * 1024)).toFixed(1)} MB).`,
+    };
+  }
+
+  // Check extension (case insensitive)
+  const extMatch = file.name.match(/\.([a-zA-Z0-9]+)$/);
+  const ext = extMatch ? extMatch[1].toLowerCase() : '';
+  const validExtensions = ['heic', 'heif', 'hif'];
+
+  if (!validExtensions.includes(ext)) {
+    return {
+      valid: false,
+      error: `File extension .${ext || 'unknown'} is not supported. Please select a .heic or .heif file.`,
+      detectedType: 'unknown',
+    };
+  }
+
+  // Inspect binary signature
+  const detectedType = await detectMagicBytes(file);
+  if (detectedType !== 'heic') {
+    return {
+      valid: false,
+      error: 'The uploaded file does not contain a valid HEIC/HEIF image header. It may be corrupted or renamed.',
+      detectedType,
+    };
+  }
+
+  return { valid: true, detectedType: 'heic' };
 }
 
 /**

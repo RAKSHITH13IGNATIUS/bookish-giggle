@@ -1,10 +1,10 @@
 import type { Metadata } from 'next';
 import CompressorTool from '@/components/ImageCompressor/CompressorTool';
-import AdSlot from '@/components/AdSlot';
 import { HelpCircle, Sparkles } from 'lucide-react';
+import { getCanonicalMetadata } from '@/lib/seo';
 
 export const metadata: Metadata = {
-  title: 'Image Compressor & Resizer (JPG, PNG, WebP) - Batch Optimizer',
+  title: 'Image Compressor & Resizer (JPG, PNG, WebP) - Free & Private',
   description:
     'Compress and resize multiple JPG, PNG, and WebP images in your browser with customizable quality, dimension scaling, and ZIP export. 100% free and private.',
   keywords: [
@@ -16,22 +16,19 @@ export const metadata: Metadata = {
     'compress jpg to target size',
     'bulk image resize',
   ],
-  alternates: {
-    canonical: 'https://quickfile.io/image-compressor-resizer',
-  },
+  alternates: getCanonicalMetadata('/image-compressor-resizer'),
   openGraph: {
-    title: 'Image Compressor & Resizer (JPG, PNG, WebP) - QuickFile.io',
+    title: 'Image Compressor & Resizer (JPG, PNG, WebP) | NimbleFile',
     description:
       'Fast in-browser batch image optimizer. Reduce image file sizes without uploading your photos to a server.',
-    url: 'https://quickfile.io/image-compressor-resizer',
+    url: '/image-compressor-resizer',
   },
 };
 
 const jsonLd = {
   '@context': 'https://schema.org',
   '@type': 'WebApplication',
-  name: 'Image Compressor and Resizer',
-  url: 'https://quickfile.io/image-compressor-resizer',
+  name: 'NimbleFile Image Compressor and Resizer',
   description:
     'Free client-side tool to batch compress and resize JPG, PNG, and WebP images with custom quality controls and ZIP archive download.',
   applicationCategory: 'UtilityApplication',
@@ -53,14 +50,11 @@ const jsonLd = {
 
 export default function ImageCompressorPage() {
   return (
-    <div className="space-y-12">
+    <div className="space-y-12 max-w-4xl mx-auto">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-
-      {/* Top Ad Slot */}
-      <AdSlot slotId="compressor-top-banner" format="leaderboard" />
 
       {/* Tool Header */}
       <section className="text-center max-w-3xl mx-auto space-y-3">
@@ -83,9 +77,6 @@ export default function ImageCompressorPage() {
         <CompressorTool />
       </section>
 
-      {/* Mid Ad Slot */}
-      <AdSlot slotId="compressor-mid-banner" format="banner" />
-
       {/* Educational Guide */}
       <section className="bg-white rounded-3xl p-8 sm:p-12 border border-slate-200 space-y-8">
         <div>
@@ -93,7 +84,7 @@ export default function ImageCompressorPage() {
             Why Choose Client-Side Image Compression?
           </h2>
           <p className="text-sm text-slate-600 leading-relaxed">
-            Most online image compression tools send your personal photos, design assets, and confidential graphics to cloud servers for processing. QuickFile uses HTML5 Canvas and browser-native encoders directly on your device CPU/GPU.
+            Most online image compression tools send your personal photos, design assets, and confidential graphics to cloud servers for processing. NimbleFile uses HTML5 Canvas and browser-native encoders directly on your device CPU/GPU.
           </p>
         </div>
 
@@ -148,9 +139,6 @@ export default function ImageCompressorPage() {
           </div>
         </div>
       </section>
-
-      {/* Bottom Ad Slot */}
-      <AdSlot slotId="compressor-bottom-leaderboard" format="leaderboard" />
     </div>
   );
 }

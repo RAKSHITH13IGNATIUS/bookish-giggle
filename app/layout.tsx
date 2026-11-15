@@ -2,40 +2,43 @@ import type { Metadata } from 'next';
 import './globals.css';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import { getProductionSiteUrl } from '@/lib/seo';
+
+const productionUrl = getProductionSiteUrl();
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://quickfile.io'),
+  ...(productionUrl ? { metadataBase: new URL(productionUrl) } : {}),
   title: {
-    default: 'QuickFile.io - 100% Free Client-Side File & Image Utilities',
-    template: '%s | QuickFile.io',
+    default: 'NimbleFile - Simple Tools for Everyday Files',
+    template: '%s | NimbleFile',
   },
   description:
-    'Free online photo resizer, signature compressor, image optimizer, and PDF tools. Runs entirely in your browser with zero file uploads for maximum security and speed.',
+    'Free online photo resizer, signature compressor, HEIC to JPG converter, image optimizer, and PDF tools. Runs entirely in your browser with zero file uploads for maximum security and speed.',
   keywords: [
+    'nimblefile',
     'photo resizer',
     'signature resizer',
-    'photo size reducer',
+    'heic to jpg',
+    'heic converter',
+    'image compressor',
     'compress image to 50kb',
-    'compress image to 20kb',
-    'passport photo resizer',
     'images to pdf',
     'merge pdf',
     'split pdf',
     'client side file utility',
   ],
-  authors: [{ name: 'QuickFile Team' }],
-  creator: 'QuickFile.io',
+  authors: [{ name: 'NimbleFile Team' }],
+  creator: 'NimbleFile',
   icons: {
     icon: '/favicon.ico',
   },
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    url: 'https://quickfile.io',
-    siteName: 'QuickFile.io',
-    title: 'QuickFile.io - Fast, Free, In-Browser File Utilities',
+    siteName: 'NimbleFile',
+    title: 'NimbleFile - Simple Tools for Everyday Files',
     description:
-      'Resize exam photos and signatures to exact KB and dimensions, compress images, convert to PDF, and merge/split PDFs securely on your device.',
+      'Resize exam photos and signatures, convert HEIC to JPG, compress images, and merge or split PDFs securely on your device with zero server uploads.',
   },
 };
 

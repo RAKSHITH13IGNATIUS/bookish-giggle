@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import PdfSplitMergeTool from '@/components/PdfSplitMerge/PdfSplitMergeTool';
-import AdSlot from '@/components/AdSlot';
 import { HelpCircle, Sparkles } from 'lucide-react';
+import { getCanonicalMetadata } from '@/lib/seo';
 
 export const metadata: Metadata = {
   title: 'PDF Split & Merge - Combine or Extract PDF Pages Online',
@@ -16,22 +16,19 @@ export const metadata: Metadata = {
     'separate pdf pages',
     'free pdf utility',
   ],
-  alternates: {
-    canonical: 'https://quickfile.io/pdf-split-merge',
-  },
+  alternates: getCanonicalMetadata('/pdf-split-merge'),
   openGraph: {
-    title: 'PDF Split & Merge - QuickFile.io',
+    title: 'PDF Split & Merge | NimbleFile',
     description:
       'Fast in-browser PDF manipulation. Merge, split, or extract pages securely on your device.',
-    url: 'https://quickfile.io/pdf-split-merge',
+    url: '/pdf-split-merge',
   },
 };
 
 const jsonLd = {
   '@context': 'https://schema.org',
   '@type': 'WebApplication',
-  name: 'PDF Split and Merge',
-  url: 'https://quickfile.io/pdf-split-merge',
+  name: 'NimbleFile PDF Split and Merge',
   description:
     'Free client-side tool to combine multiple PDF files into one or split PDF documents into custom page ranges and individual pages.',
   applicationCategory: 'UtilityApplication',
@@ -52,14 +49,11 @@ const jsonLd = {
 
 export default function PdfSplitMergePage() {
   return (
-    <div className="space-y-12">
+    <div className="space-y-12 max-w-4xl mx-auto">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-
-      {/* Top Ad Slot */}
-      <AdSlot slotId="pdf-splitmerge-top-banner" format="leaderboard" />
 
       {/* Header */}
       <section className="text-center max-w-3xl mx-auto space-y-3">
@@ -82,9 +76,6 @@ export default function PdfSplitMergePage() {
         <PdfSplitMergeTool />
       </section>
 
-      {/* Mid Ad Slot */}
-      <AdSlot slotId="pdf-splitmerge-mid-banner" format="banner" />
-
       {/* Educational Guide */}
       <section className="bg-white rounded-3xl p-8 sm:p-12 border border-slate-200 space-y-8">
         <div>
@@ -92,7 +83,7 @@ export default function PdfSplitMergePage() {
             Secure, Browser-Side PDF Manipulation
           </h2>
           <p className="text-sm text-slate-600 leading-relaxed">
-            Most online PDF tools upload your sensitive legal contracts, tax documents, and financial papers to external servers. QuickFile processes every page locally using pdf-lib inside your browser.
+            Most online PDF tools upload your sensitive legal contracts, tax documents, and financial papers to external servers. NimbleFile processes every page locally using pdf-lib inside your browser.
           </p>
         </div>
 
@@ -147,9 +138,6 @@ export default function PdfSplitMergePage() {
           </div>
         </div>
       </section>
-
-      {/* Bottom Ad Slot */}
-      <AdSlot slotId="pdf-splitmerge-bottom-leaderboard" format="leaderboard" />
     </div>
   );
 }

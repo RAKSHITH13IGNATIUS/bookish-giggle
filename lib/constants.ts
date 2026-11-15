@@ -37,6 +37,15 @@ export const TOOLS: ToolInfo[] = [
     badge: 'Fast',
     icon: 'FileText',
   },
+  {
+    id: 'heic-to-jpg',
+    name: 'HEIC to JPG Converter',
+    slug: '/heic-to-jpg',
+    category: 'image',
+    shortDescription: 'Convert iPhone and Apple HEIC/HEIF photos to JPG in your browser with zero server uploads.',
+    badge: 'New',
+    icon: 'ImageDown',
+  },
 ];
 
 export const PHOTO_SIGNATURE_PRESETS: Preset[] = [

@@ -1,12 +1,12 @@
-# QuickFile.io - 100% Free Client-Side File & Image Utilities
+# NimbleFile - Simple Tools for Everyday Files
 
 A production-ready, privacy-first web utility platform built with **Next.js 14 (App Router)**, **TypeScript**, **Tailwind CSS**, and **Browser APIs**.
 
-All processing runs 100% locally in the user's browser using HTML5 Canvas and `pdf-lib`. No database, no user accounts, and zero remote file uploads.
+All processing runs 100% locally in the user's browser using HTML5 Canvas, `pdf-lib`, and `heic2any`. No database, no user accounts, and zero remote file uploads.
 
 ---
 
-## 🛠️ The Four Services
+## 🛠️ The Five Services
 
 1. **Photo & Signature Resizer (`/photo-signature-resizer`)**
    - Exact pixel dimensions ($W \times H$) with aspect ratio lock/unlock.
@@ -23,7 +23,14 @@ All processing runs 100% locally in the user's browser using HTML5 Canvas and `p
    - Target KB limit per image.
    - Single download or batch ZIP archive export.
 
-3. **Images to PDF Converter (`/images-to-pdf`)**
+3. **HEIC to JPG Converter (`/heic-to-jpg`)**
+   - Converts Apple iPhone & iPad HEIC and HEIF photos to standard JPG or PNG images.
+   - 100% browser-side decoding via WebAssembly (`heic2any`).
+   - Memory-safe sequential batch processing for mobile devices.
+   - Quality adjustment slider (80% compact to 100% maximum).
+   - Single download or batch ZIP export.
+
+4. **Images to PDF Converter (`/images-to-pdf`)**
    - Multiple image uploads with drag-and-drop.
    - Interactive page reordering (move up/down) and removal.
    - Page sizes: A4, US Letter, and Fit to Image.
@@ -31,7 +38,7 @@ All processing runs 100% locally in the user's browser using HTML5 Canvas and `p
    - Margin controls (None, Small, Normal).
    - Live PDF preview iframe and instant PDF download.
 
-4. **PDF Split & Merge (`/pdf-split-merge`)**
+5. **PDF Split & Merge (`/pdf-split-merge`)**
    - **Merge**: Combine multiple PDF documents in a customized order.
    - **Split**: Extract specific page ranges (e.g., `1-3, 5`) or split all pages into individual PDFs packaged into a ZIP archive.
    - Embedded preview iframe and fast client-side export.
@@ -41,36 +48,30 @@ All processing runs 100% locally in the user's browser using HTML5 Canvas and `p
 ## 🔒 Privacy & Security
 
 - **Zero Server Uploads**: Files never leave the client's device.
-- **Magic-Byte Binary Validation**: Header inspections detect true MIME signatures (`JPEG`, `PNG`, `WebP`, `PDF`) to prevent file spoofing.
+- **Magic-Byte Binary Validation**: Header inspections detect true MIME signatures (`JPEG`, `PNG`, `WebP`, `PDF`, `HEIC`) to prevent file spoofing.
 - **Memory Safety**: Automated revocation of `URL.createObjectURL` references to prevent browser memory leaks on mobile devices.
 - **Security Headers**: Standard HTTP security headers configured in `next.config.mjs`.
 
 ---
 
-## 🚀 Getting Started
+## 🌐 Environment Configuration
 
-### Prerequisites
-- Node.js 18+ (tested on Node.js 24)
-- pnpm (recommended) or npm
-
-### Installation
-```bash
-pnpm install
-```
-
-### Running Locally
-```bash
-# Development server
-pnpm dev
-
-# Production build
-pnpm build
-pnpm start
-```
-
-Visit [http://localhost:3000](http://localhost:3000) to view the application.
+- `SITE_URL`: Set to your production canonical domain (e.g. `https://nimblefile.com`). When set, production canonical URLs and XML sitemaps will use this origin, and `robots.txt` will allow search engine crawling. When unset (such as on Vercel preview deployments or local dev), `robots.txt` disallows indexing to protect staging environments from duplicate indexing.
 
 ---
 
-## 📜 License
-MIT
+## 🚀 Getting Started
+
+```bash
+# Install dependencies
+pnpm install
+
+# Run development server
+pnpm dev
+
+# Build for production
+pnpm build
+
+# Start production server
+pnpm start
+```

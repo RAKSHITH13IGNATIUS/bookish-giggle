@@ -1,12 +1,17 @@
 import { MetadataRoute } from 'next';
 import { TOOLS } from '@/lib/constants';
+import { getProductionSiteUrl } from '@/lib/seo';
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = 'https://quickfile.io';
+  const baseUrl = getProductionSiteUrl();
 
-  const toolRoutes = TOOLS.map((tool) => ({
+  // If no production URL is configured, return empty to prevent generating incorrect URLs
+  if (!baseUrl) {
+    return [];
+  }
+
+  const toolRoutes: MetadataRoute.Sitemap = TOOLS.map((tool) => ({
     url: `${baseUrl}${tool.slug}`,
-    lastModified: new Date(),
     changeFrequency: 'weekly' as const,
     priority: 0.85,
   }));
@@ -14,7 +19,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
   return [
     {
       url: baseUrl,
-      lastModified: new Date(),
       changeFrequency: 'daily' as const,
       priority: 1.0,
     },

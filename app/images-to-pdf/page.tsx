@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import ImagesToPdfTool from '@/components/ImagesToPdf/ImagesToPdfTool';
-import AdSlot from '@/components/AdSlot';
 import { HelpCircle, Sparkles } from 'lucide-react';
+import { getCanonicalMetadata } from '@/lib/seo';
 
 export const metadata: Metadata = {
   title: 'Images to PDF Converter - Free, High Quality, No Uploads',
@@ -16,22 +16,19 @@ export const metadata: Metadata = {
     'free image to pdf converter',
     'client side pdf converter',
   ],
-  alternates: {
-    canonical: 'https://quickfile.io/images-to-pdf',
-  },
+  alternates: getCanonicalMetadata('/images-to-pdf'),
   openGraph: {
-    title: 'Images to push the code to this  PDF Converter - QuickFile.io',
+    title: 'Images to PDF Converter | NimbleFile',
     description:
       'Turn multiple pictures into a neat PDF document. 100% private, runs entirely on your device with zero file uploads.',
-    url: 'https://quickfile.io/images-to-pdf',
+    url: '/images-to-pdf',
   },
 };
 
 const jsonLd = {
   '@context': 'https://schema.org',
   '@type': 'WebApplication',
-  name: 'Images to PDF Converter',
-  url: 'https://quickfile.io/images-to-pdf',
+  name: 'NimbleFile Images to PDF Converter',
   description:
     'Free in-browser tool to convert multiple images to PDF with page size, margin, and layout customization.',
   applicationCategory: 'UtilityApplication',
@@ -54,14 +51,11 @@ const jsonLd = {
 
 export default function ImagesToPdfPage() {
   return (
-    <div className="space-y-12">
+    <div className="space-y-12 max-w-4xl mx-auto">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-
-      {/* Top Ad Slot */}
-      <AdSlot slotId="img2pdf-top-banner" format="leaderboard" />
 
       {/* Header */}
       <section className="text-center max-w-3xl mx-auto space-y-3">
@@ -84,9 +78,6 @@ export default function ImagesToPdfPage() {
         <ImagesToPdfTool />
       </section>
 
-      {/* Mid Ad Slot */}
-      <AdSlot slotId="img2pdf-mid-banner" format="banner" />
-
       {/* Educational Guide */}
       <section className="bg-white rounded-3xl p-8 sm:p-12 border border-slate-200 space-y-8">
         <div>
@@ -94,7 +85,7 @@ export default function ImagesToPdfPage() {
             How to Create Clean PDFs from Images
           </h2>
           <p className="text-sm text-slate-600 leading-relaxed">
-            Whether preparing application documents, digitizing receipts, or compiling photo portfolios, QuickFile builds standard ISO 32000 compliant PDF documents using pure client-side vector and raster embedding via pdf-lib.
+            Whether preparing application documents, digitizing receipts, or compiling photo portfolios, NimbleFile builds standard ISO 32000 compliant PDF documents using pure client-side vector and raster embedding via pdf-lib.
           </p>
         </div>
 
@@ -149,9 +140,6 @@ export default function ImagesToPdfPage() {
           </div>
         </div>
       </section>
-
-      {/* Bottom Ad Slot */}
-      <AdSlot slotId="img2pdf-bottom-leaderboard" format="leaderboard" />
     </div>
   );
 }

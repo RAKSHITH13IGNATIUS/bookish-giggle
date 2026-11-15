@@ -1,6 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
-import { Crop, Maximize2, FileImage, FileText, ArrowRight, ShieldCheck } from 'lucide-react';
+import { Crop, Maximize2, FileImage, FileText, ImageDown, ArrowRight, ShieldCheck } from 'lucide-react';
 import { ToolInfo } from '@/lib/types';
 
 const ICON_MAP: Record<string, React.ReactNode> = {
@@ -8,6 +8,7 @@ const ICON_MAP: Record<string, React.ReactNode> = {
   Maximize2: <Maximize2 className="w-6 h-6 text-brand-600" />,
   FileImage: <FileImage className="w-6 h-6 text-brand-600" />,
   FileText: <FileText className="w-6 h-6 text-brand-600" />,
+  ImageDown: <ImageDown className="w-6 h-6 text-brand-600" />,
 };
 
 interface ToolCardProps {
