@@ -1,54 +1,47 @@
 import type { Metadata } from 'next';
 import CompressorTool from '@/components/ImageCompressor/CompressorTool';
-import { HelpCircle, Sparkles } from 'lucide-react';
+import { HelpCircle } from 'lucide-react';
 import { getCanonicalMetadata } from '@/lib/seo';
 
 export const metadata: Metadata = {
-  title: 'Image Compressor & Resizer (JPG, PNG, WebP) - Free & Private',
+  title: 'Image Compressor & Resizer (Batch JPG, PNG, WebP) - Free & Private',
   description:
-    'Compress and resize multiple JPG, PNG, and WebP images in your browser with customizable quality, dimension scaling, and ZIP export. 100% free and private.',
+    'Compress and resize multiple JPG, PNG, and WebP images online for free. Adjust quality, scale percentages, and download as a ZIP with 100% browser-side privacy.',
   keywords: [
     'image compressor',
     'image resizer',
-    'batch image compression',
-    'compress webp',
-    'compress png without losing quality',
-    'compress jpg to target size',
-    'bulk image resize',
+    'compress jpeg',
+    'compress png',
+    'batch image compressor',
+    'webp converter',
+    'photo compression online',
+    'reduce image size',
   ],
   alternates: getCanonicalMetadata('/image-compressor-resizer'),
   openGraph: {
-    title: 'Image Compressor & Resizer (JPG, PNG, WebP) | NimbleFile',
+    title: 'Image Compressor & Resizer (Batch JPG, PNG, WebP) | NimbleFile',
     description:
-      'Fast in-browser batch image optimizer. Reduce image file sizes without uploading your photos to a server.',
+      'Batch compress and resize images directly in your browser. Fast, private, and free with ZIP archive download.',
     url: '/image-compressor-resizer',
   },
 };
 
-const jsonLd = {
-  '@context': 'https://schema.org',
-  '@type': 'WebApplication',
-  name: 'NimbleFile Image Compressor and Resizer',
-  description:
-    'Free client-side tool to batch compress and resize JPG, PNG, and WebP images with custom quality controls and ZIP archive download.',
-  applicationCategory: 'UtilityApplication',
-  operatingSystem: 'All',
-  offers: {
-    '@type': 'Offer',
-    price: '0',
-    priceCurrency: 'USD',
-  },
-  featureList: [
-    'JPG, PNG, and WebP batch compression',
-    'Percentage and pixel dimension downscaling',
-    'Lossless and lossy quality sliders',
-    'Target file size (KB) iterative optimization',
-    'Single and batch ZIP export',
-    '100% Client-side processing with zero server uploads',
-  ],
-};
-
 export default function ImageCompressorPage() {
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    name: 'NimbleFile Image Compressor & Resizer',
+    applicationCategory: 'MultimediaApplication',
+    operatingSystem: 'Any (Web Browser)',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'USD',
+    },
+    description:
+      'Free client-side image compressor and resizer tool supporting batch compression for JPG, PNG, and WebP files with customizable quality and ZIP download.',
+  };
+
   return (
     <div className="space-y-12 max-w-4xl mx-auto">
       <script
@@ -57,18 +50,13 @@ export default function ImageCompressorPage() {
       />
 
       {/* Tool Header */}
-      <section className="text-center max-w-3xl mx-auto space-y-3">
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-50 border border-brand-200/60 text-brand-700 text-xs font-semibold">
-          <Sparkles className="w-3.5 h-3.5" />
-          <span>Batch Image Suite</span>
-        </div>
-
-        <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
+      <section className="text-center max-w-3xl mx-auto space-y-3 pt-2">
+        <h1 className="text-3xl sm:text-4xl font-extrabold text-[#203247] tracking-tight">
           Image Compressor & Resizer
         </h1>
 
-        <p className="text-sm sm:text-base text-slate-600 max-w-xl mx-auto">
-          Reduce image file sizes by up to 80% while preserving crisp visual detail. Batch process JPG, PNG, and WebP files with instant ZIP download.
+        <p className="text-sm sm:text-base text-[#64748B] max-w-xl mx-auto leading-relaxed">
+          Reduce image file sizes while preserving sharp visual detail. Batch process JPG, PNG, and WebP files with instant ZIP download.
         </p>
       </section>
 
@@ -78,34 +66,34 @@ export default function ImageCompressorPage() {
       </section>
 
       {/* Educational Guide */}
-      <section className="bg-white rounded-3xl p-8 sm:p-12 border border-slate-200 space-y-8">
+      <section className="bg-white rounded-3xl p-8 sm:p-10 border border-[#E5EAF1] shadow-sm space-y-8">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900 mb-3">
-            Why Choose Client-Side Image Compression?
+          <h2 className="text-xl sm:text-2xl font-bold text-[#203247] mb-2">
+            Why choose in-browser image compression?
           </h2>
-          <p className="text-sm text-slate-600 leading-relaxed">
-            Most online image compression tools send your personal photos, design assets, and confidential graphics to cloud servers for processing. NimbleFile uses HTML5 Canvas and browser-native encoders directly on your device CPU/GPU.
+          <p className="text-sm text-[#64748B] leading-relaxed">
+            Most online image compression tools send personal photos, design assets, and confidential graphics to cloud servers. NimbleFile uses HTML5 Canvas and browser-native encoders directly on your device CPU/GPU.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="p-5 rounded-2xl bg-slate-50 border border-slate-100 space-y-2">
-            <h3 className="font-bold text-slate-900 text-sm">JPG vs WebP Compression</h3>
-            <p className="text-xs text-slate-500 leading-relaxed">
-              Converting camera photos from standard JPEG to WebP format often provides a 25% to 35% smaller file size at equivalent visual fidelity.
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2 border-t border-[#E5EAF1]">
+          <div className="p-5 rounded-2xl bg-[#F7FAFF] border border-[#E5EAF1] space-y-2">
+            <h3 className="font-bold text-[#203247] text-sm">JPG vs WebP Compression</h3>
+            <p className="text-xs text-[#64748B] leading-relaxed">
+              Converting camera photos from standard JPEG to modern WebP format provides a 25% to 35% smaller file size at equivalent visual fidelity.
             </p>
           </div>
 
-          <div className="p-5 rounded-2xl bg-slate-50 border border-slate-100 space-y-2">
-            <h3 className="font-bold text-slate-900 text-sm">Stepped Downsampling</h3>
-            <p className="text-xs text-slate-500 leading-relaxed">
-              When scaling high-resolution images down by more than 50%, our engine applies progressive multi-pass resampling to prevent jagged moiré patterns.
+          <div className="p-5 rounded-2xl bg-[#F7FAFF] border border-[#E5EAF1] space-y-2">
+            <h3 className="font-bold text-[#203247] text-sm">Stepped Downsampling</h3>
+            <p className="text-xs text-[#64748B] leading-relaxed">
+              When scaling high-resolution images down by more than 50%, our engine applies progressive multi-pass resampling to prevent jagged moiré artifacts.
             </p>
           </div>
 
-          <div className="p-5 rounded-2xl bg-slate-50 border border-slate-100 space-y-2">
-            <h3 className="font-bold text-slate-900 text-sm">Batch ZIP Archiving</h3>
-            <p className="text-xs text-slate-500 leading-relaxed">
+          <div className="p-5 rounded-2xl bg-[#F7FAFF] border border-[#E5EAF1] space-y-2">
+            <h3 className="font-bold text-[#203247] text-sm">Batch ZIP Archiving</h3>
+            <p className="text-xs text-[#64748B] leading-relaxed">
               Easily process dozens of images simultaneously and download them in a single compressed ZIP archive with one click.
             </p>
           </div>
@@ -113,27 +101,27 @@ export default function ImageCompressorPage() {
       </section>
 
       {/* FAQs */}
-      <section className="space-y-6">
+      <section className="space-y-5">
         <div className="flex items-center gap-2">
-          <HelpCircle className="w-5 h-5 text-brand-600" />
-          <h2 className="text-xl font-bold text-slate-900">Frequently Asked Questions</h2>
+          <HelpCircle className="w-5 h-5 text-[#3979E6]" />
+          <h2 className="text-xl font-bold text-[#203247]">Frequently Asked Questions</h2>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="p-5 bg-white rounded-2xl border border-slate-200 space-y-2">
-            <h3 className="font-semibold text-sm text-slate-900">
+          <div className="p-5 bg-white rounded-2xl border border-[#E5EAF1] shadow-xs space-y-1.5">
+            <h3 className="font-bold text-sm text-[#203247]">
               What is the optimal compression quality?
             </h3>
-            <p className="text-xs text-slate-500 leading-relaxed">
+            <p className="text-xs text-[#64748B] leading-relaxed">
               We recommend 75% to 85% for general websites and mobile sharing. This delivers roughly 60% file size reduction with virtually no perceptible loss in quality.
             </p>
           </div>
 
-          <div className="p-5 bg-white rounded-2xl border border-slate-200 space-y-2">
-            <h3 className="font-semibold text-sm text-slate-900">
+          <div className="p-5 bg-white rounded-2xl border border-[#E5EAF1] shadow-xs space-y-1.5">
+            <h3 className="font-bold text-sm text-[#203247]">
               Does compressing PNGs make them blurry?
             </h3>
-            <p className="text-xs text-slate-500 leading-relaxed">
+            <p className="text-xs text-[#64748B] leading-relaxed">
               PNG is a lossless format. When you resize PNGs, pixel clarity is preserved. If you need drastic size reductions for graphics, converting to WebP or JPEG is recommended.
             </p>
           </div>

@@ -11,7 +11,6 @@ import {
   AlertTriangle,
   RefreshCw,
   Archive,
-  ArrowRight,
   Sparkles,
 } from 'lucide-react';
 import { BatchImageItem, BatchCompressionSettings, ProcessedImageResult } from '@/lib/types';
@@ -99,11 +98,8 @@ export default function CompressorTool() {
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (e.type === 'dragenter' || e.type === 'dragover') {
-      setDragActive(true);
-    } else if (e.type === 'dragleave') {
-      setDragActive(false);
-    }
+    if (e.type === 'dragenter' || e.type === 'dragover') setDragActive(true);
+    else if (e.type === 'dragleave') setDragActive(false);
   };
 
   const handleDrop = (e: React.DragEvent) => {
@@ -115,87 +111,90 @@ export default function CompressorTool() {
     }
   };
 
-  // Remove single item from queue
+  // Remove single item
   const removeItem = (id: string) => {
-    setItems((prev) => {
-      const target = prev.find((item) => item.id === id);
-      if (target?.previewUrl) URL.revokeObjectURL(target.previewUrl);
-      if (target?.result?.dataUrl) URL.revokeObjectURL(target.result.dataUrl);
-      return prev.filter((item) => item.id !== id);
-    });
+    setItems((prev) => prev.filter((item) => item.id !== id));
   };
 
-  // Clear all items
+  // Clear entire queue
   const clearAll = () => {
-    items.forEach((item) => {
-      if (item.previewUrl) URL.revokeObjectURL(item.previewUrl);
-      if (item.result?.dataUrl) URL.revokeObjectURL(item.result.dataUrl);
-    });
     setItems([]);
+    setErrorMessage(null);
   };
 
-  // Process a single image
-  const processItem = async (
+  // Compress individual item using Canvas engine
+  const compressSingleItem = async (
     item: BatchImageItem,
-    currentSettings: BatchCompressionSettings
+    batchSettings: BatchCompressionSettings
   ): Promise<ProcessedImageResult> => {
     const img = await loadImage(item.file);
-    let targetW = item.originalWidth;
-    let targetH = item.originalHeight;
+    const originalWidth = img.naturalWidth || img.width;
+    const originalHeight = img.naturalHeight || img.height;
 
-    if (currentSettings.resizeMode === 'percentage') {
-      const factor = currentSettings.scalePercentage / 100;
-      targetW = Math.max(10, Math.round(item.originalWidth * factor));
-      targetH = Math.max(10, Math.round(item.originalHeight * factor));
-    } else if (currentSettings.resizeMode === 'dimensions') {
-      if (currentSettings.targetWidth && currentSettings.targetHeight) {
-        targetW = currentSettings.targetWidth;
-        targetH = currentSettings.targetHeight;
+    let targetWidth = originalWidth;
+    let targetHeight = originalHeight;
+
+    if (batchSettings.resizeMode === 'percentage') {
+      const scale = (batchSettings.scalePercentage || 100) / 100;
+      targetWidth = Math.max(1, Math.round(originalWidth * scale));
+      targetHeight = Math.max(1, Math.round(originalHeight * scale));
+    } else if (batchSettings.resizeMode === 'dimensions') {
+      if (batchSettings.targetWidth && batchSettings.targetHeight) {
+        targetWidth = batchSettings.targetWidth;
+        targetHeight = batchSettings.targetHeight;
+      } else if (batchSettings.targetWidth) {
+        const ratio = batchSettings.targetWidth / originalWidth;
+        targetWidth = batchSettings.targetWidth;
+        targetHeight = Math.round(originalHeight * ratio);
+      } else if (batchSettings.targetHeight) {
+        const ratio = batchSettings.targetHeight / originalHeight;
+        targetHeight = batchSettings.targetHeight;
+        targetWidth = Math.round(originalWidth * ratio);
       }
     }
 
-    // Determine output format
-    let targetFormat: 'image/jpeg' | 'image/png' | 'image/webp' = 'image/jpeg';
-    if (currentSettings.format === 'original') {
-      if (item.file.type === 'image/png') targetFormat = 'image/png';
-      else if (item.file.type === 'image/webp') targetFormat = 'image/webp';
-      else targetFormat = 'image/jpeg';
+    let outFormat: 'image/jpeg' | 'image/png' | 'image/webp' = 'image/jpeg';
+    if (batchSettings.format === 'original') {
+      if (item.file.type === 'image/png') outFormat = 'image/png';
+      else if (item.file.type === 'image/webp') outFormat = 'image/webp';
+      else outFormat = 'image/jpeg';
     } else {
-      targetFormat = currentSettings.format;
+      outFormat = batchSettings.format as 'image/jpeg' | 'image/png' | 'image/webp';
     }
 
     const options: ResizeOptions = {
-      width: targetW,
-      height: targetH,
+      width: targetWidth,
+      height: targetHeight,
       fitMode: 'stretch',
-      format: targetFormat,
-      quality: currentSettings.quality,
-      targetKB: currentSettings.enableTargetKB ? currentSettings.targetKB : undefined,
+      format: outFormat,
+      quality: batchSettings.quality,
+      targetKB: batchSettings.enableTargetKB ? batchSettings.targetKB : undefined,
     };
 
-    return processPhotoOrSignature(img, item.file, options);
+    return await processPhotoOrSignature(img, item.file, options);
   };
 
-  // Process all queued images
+  // Process all queued items sequentially to prevent tab freezing
   const processAll = async () => {
     if (items.length === 0 || isProcessingBatch) return;
+
     setIsProcessingBatch(true);
+    setErrorMessage(null);
 
     const updated = [...items];
 
     for (let i = 0; i < updated.length; i++) {
-      const item = updated[i];
-      item.status = 'processing';
+      const current = updated[i];
+      current.status = 'processing';
       setItems([...updated]);
 
       try {
-        const res = await processItem(item, settings);
-        registerObjectUrl(res.dataUrl);
-        item.status = 'done';
-        item.result = res;
+        const res = await compressSingleItem(current, settings);
+        current.result = res;
+        current.status = 'done';
       } catch (err: any) {
-        item.status = 'error';
-        item.errorMessage = err.message || 'Processing failed';
+        current.status = 'error';
+        current.errorMessage = err.message || 'Compression failed';
       }
 
       setItems([...updated]);
@@ -204,61 +203,70 @@ export default function CompressorTool() {
     setIsProcessingBatch(false);
   };
 
-  // Download individual processed item
+  // Download single item
   const downloadItem = (item: BatchImageItem) => {
     if (!item.result) return;
-    const ext = item.result.format === 'image/webp' ? 'webp' : item.result.format === 'image/png' ? 'png' : 'jpg';
-    const base = item.name.substring(0, item.name.lastIndexOf('.')) || 'image';
-    const filename = `${base}_compressed.${ext}`;
+    const baseName = item.name.replace(/\.[^/.]+$/, '');
+    let ext = 'jpg';
+    if (item.result.format === 'image/png') ext = 'png';
+    else if (item.result.format === 'image/webp') ext = 'webp';
+
+    const filename = `${baseName}-compressed.${ext}`;
     downloadBlob(item.result.blob, filename);
   };
 
-  // Download all as ZIP
+  // Download all completed items in a ZIP archive
   const downloadAllAsZip = async () => {
-    const readyItems = items.filter((item) => item.result);
-    if (readyItems.length === 0) return;
+    const completed = items.filter((item) => item.status === 'done' && item.result);
+    if (completed.length === 0) return;
 
-    const zipEntries: ZipFileEntry[] = readyItems.map((item, idx) => {
-      const ext = item.result!.format === 'image/webp' ? 'webp' : item.result!.format === 'image/png' ? 'png' : 'jpg';
-      const base = item.name.substring(0, item.name.lastIndexOf('.')) || `image_${idx + 1}`;
+    const zipEntries: ZipFileEntry[] = completed.map((item) => {
+      const baseName = item.name.replace(/\.[^/.]+$/, '');
+      let ext = 'jpg';
+      if (item.result?.format === 'image/png') ext = 'png';
+      else if (item.result?.format === 'image/webp') ext = 'webp';
+
       return {
-        filename: `${base}_compressed.${ext}`,
+        filename: `${baseName}-compressed.${ext}`,
         blob: item.result!.blob,
       };
     });
 
-    await downloadZipArchive(zipEntries, 'compressed_images.zip');
+    await downloadZipArchive(zipEntries, 'compressed-images.zip');
   };
 
-  // Totals calculation
-  const totalOriginalSize = items.reduce((sum, item) => sum + item.originalSize, 0);
-  const totalProcessedSize = items.reduce((sum, item) => sum + (item.result?.sizeBytes || 0), 0);
-  const processedCount = items.filter((item) => item.status === 'done').length;
+  // Metrics summary
+  const totalOriginalSize = items.reduce((acc, curr) => acc + curr.originalSize, 0);
+  const totalProcessedSize = items.reduce((acc, curr) => {
+    if (curr.result) return acc + curr.result.sizeBytes;
+    return acc + curr.originalSize;
+  }, 0);
+  const processedCount = items.filter((i) => i.status === 'done').length;
   const overallReduction =
-    totalOriginalSize > 0 && processedCount > 0
-      ? Math.round((1 - totalProcessedSize / totalOriginalSize) * 100)
+    totalOriginalSize > 0
+      ? Math.round(((totalOriginalSize - totalProcessedSize) / totalOriginalSize) * 100)
       : 0;
 
   return (
     <div className="space-y-8">
       {errorMessage && (
-        <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center justify-between">
+        <div className="p-4 rounded-2xl bg-[#FFB6A6]/20 border border-[#FFB6A6] text-[#203247] text-xs flex items-center justify-between">
           <span>{errorMessage}</span>
-          <button onClick={() => setErrorMessage(null)} className="font-bold ml-2">✕</button>
+          <button onClick={() => setErrorMessage(null)} className="font-bold ml-2 text-[#64748B] hover:text-[#203247]">✕</button>
         </div>
       )}
 
-      {/* Upload Box */}
+      {/* Upload Dropzone */}
       <div
         onDragEnter={handleDrag}
         onDragLeave={handleDrag}
         onDragOver={handleDrag}
         onDrop={handleDrop}
         onClick={() => fileInputRef.current?.click()}
-        className={`border-2 border-dashed rounded-3xl p-8 sm:p-12 text-center cursor-pointer transition-all bg-white ${
+        className={`border-2 border-dashed rounded-3xl p-8 sm:p-12 text-center cursor-pointer transition-all duration-200 bg-white ${
           dragActive
-            ? 'border-brand-600 bg-brand-50/50 scale-[1.01]'
-            : 'border-slate-200 hover:border-brand-400 hover:bg-slate-50/50 shadow-sm'
+            ? 'border-[#3979E6] bg-[#E5F0FF]/50 scale-[1.01]'
+            : 'border-[#E5EAF1] hover:border-[#3979E6]/50 hover:bg-[#F7FAFF] shadow-sm'
         }`}
       >
         <input
@@ -273,16 +281,16 @@ export default function CompressorTool() {
             }
           }}
         />
-        <div className="w-16 h-16 rounded-2xl bg-brand-50 text-brand-600 mx-auto flex items-center justify-center mb-4">
+        <div className="w-16 h-16 rounded-2xl bg-[#DDF5E9] text-[#36A879] mx-auto flex items-center justify-center mb-4 transition-transform group-hover:scale-105">
           <Upload className="w-8 h-8" />
         </div>
-        <h3 className="text-lg font-bold text-slate-900 mb-1">
-          Select or Drag & Drop Multiple Images
+        <h3 className="text-lg font-bold text-[#203247] mb-1">
+          Select or Drop Multiple Images
         </h3>
-        <p className="text-xs sm:text-sm text-slate-500 mb-4 max-w-md mx-auto">
+        <p className="text-xs sm:text-sm text-[#64748B] mb-5 max-w-md mx-auto">
           Batch compress JPG, PNG, and WebP images. 100% processed client-side in your browser.
         </p>
-        <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold shadow-sm transition-all min-h-[44px]">
+        <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#3979E6] hover:bg-[#2B68D1] text-white text-sm font-semibold shadow-sm transition-all min-h-[44px]">
           <FileImage className="w-4 h-4" />
           <span>Select Images for Batch Compression</span>
         </div>
@@ -292,19 +300,19 @@ export default function CompressorTool() {
       {items.length > 0 && (
         <div className="space-y-6">
           {/* Controls Panel */}
-          <div className="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-sm space-y-6">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+          <div className="bg-white p-5 sm:p-6 rounded-3xl border border-[#E5EAF1] shadow-sm space-y-6">
+            <div className="flex items-center justify-between pb-4 border-b border-[#E5EAF1]">
               <div className="flex items-center gap-2">
-                <Sliders className="w-4 h-4 text-brand-600" />
-                <span className="font-bold text-slate-900 text-sm">Batch Compression Settings</span>
+                <Sliders className="w-4 h-4 text-[#3979E6]" />
+                <span className="font-bold text-[#203247] text-sm">Batch Compression Settings</span>
               </div>
               <button
                 type="button"
                 onClick={clearAll}
-                className="text-xs text-slate-500 hover:text-red-600 flex items-center gap-1 transition-colors min-h-[44px] px-2"
+                className="text-xs text-[#64748B] hover:text-[#E5634D] flex items-center gap-1 transition-colors min-h-[44px] px-2"
               >
                 <Trash2 className="w-3.5 h-3.5" />
-                <span>Clear All ({items.length})</span>
+                <span>Clear all ({items.length})</span>
               </button>
             </div>
 
@@ -312,10 +320,10 @@ export default function CompressorTool() {
               {/* Quality Control */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                  <label className="text-xs font-semibold text-[#203247] uppercase tracking-wider">
                     Compression Quality
                   </label>
-                  <span className="text-xs font-mono font-bold text-brand-700 bg-brand-100 px-2 py-0.5 rounded">
+                  <span className="text-xs font-mono font-bold text-[#3979E6] bg-[#E5F0FF] px-2 py-0.5 rounded-full">
                     {Math.round(settings.quality * 100)}%
                   </span>
                 </div>
@@ -327,16 +335,16 @@ export default function CompressorTool() {
                   onChange={(e) =>
                     setSettings((s) => ({ ...s, quality: Number(e.target.value) / 100 }))
                   }
-                  className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-brand-600"
+                  className="w-full h-1.5 bg-[#E5EAF1] rounded-lg appearance-none cursor-pointer accent-[#3979E6]"
                 />
-                <p className="text-[11px] text-slate-400">
-                  80% offers optimal balance between crispness and file size reduction.
+                <p className="text-[11px] text-[#64748B]">
+                  80% offers optimal balance between crisp detail and file reduction.
                 </p>
               </div>
 
               {/* Resize Mode */}
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider block">
+                <label className="text-xs font-semibold text-[#203247] uppercase tracking-wider block">
                   Resize Dimensions
                 </label>
                 <select
@@ -344,7 +352,7 @@ export default function CompressorTool() {
                   onChange={(e) =>
                     setSettings((s) => ({ ...s, resizeMode: e.target.value as any }))
                   }
-                  className="w-full px-3 py-2 text-xs font-semibold rounded-xl border border-slate-200 bg-white min-h-[44px] focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  className="w-full px-3 py-2 text-xs font-semibold rounded-xl border border-[#E5EAF1] bg-white text-[#203247] min-h-[44px] focus:outline-none focus:ring-2 focus:ring-[#3979E6]"
                 >
                   <option value="none">Original Resolution (No Resize)</option>
                   <option value="percentage">Scale by Percentage</option>
@@ -361,9 +369,9 @@ export default function CompressorTool() {
                       onChange={(e) =>
                         setSettings((s) => ({ ...s, scalePercentage: Number(e.target.value) }))
                       }
-                      className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-brand-600"
+                      className="w-full h-1.5 bg-[#E5EAF1] rounded-lg appearance-none cursor-pointer accent-[#3979E6]"
                     />
-                    <span className="text-xs font-mono font-bold text-slate-700 w-12 text-right">
+                    <span className="text-xs font-mono font-bold text-[#203247] w-12 text-right">
                       {settings.scalePercentage}%
                     </span>
                   </div>
@@ -378,7 +386,7 @@ export default function CompressorTool() {
                       onChange={(e) =>
                         setSettings((s) => ({ ...s, targetWidth: Number(e.target.value) }))
                       }
-                      className="px-2 py-1.5 text-xs rounded-lg border border-slate-200"
+                      className="px-2 py-1.5 text-xs rounded-xl border border-[#E5EAF1] text-[#203247]"
                     />
                     <input
                       type="number"
@@ -387,7 +395,7 @@ export default function CompressorTool() {
                       onChange={(e) =>
                         setSettings((s) => ({ ...s, targetHeight: Number(e.target.value) }))
                       }
-                      className="px-2 py-1.5 text-xs rounded-lg border border-slate-200"
+                      className="px-2 py-1.5 text-xs rounded-xl border border-[#E5EAF1] text-[#203247]"
                     />
                   </div>
                 )}
@@ -395,7 +403,7 @@ export default function CompressorTool() {
 
               {/* Output Format */}
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider block">
+                <label className="text-xs font-semibold text-[#203247] uppercase tracking-wider block">
                   Output Format
                 </label>
                 <select
@@ -403,21 +411,21 @@ export default function CompressorTool() {
                   onChange={(e) =>
                     setSettings((s) => ({ ...s, format: e.target.value as any }))
                   }
-                  className="w-full px-3 py-2 text-xs font-semibold rounded-xl border border-slate-200 bg-white min-h-[44px] focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  className="w-full px-3 py-2 text-xs font-semibold rounded-xl border border-[#E5EAF1] bg-white text-[#203247] min-h-[44px] focus:outline-none focus:ring-2 focus:ring-[#3979E6]"
                 >
                   <option value="original">Keep Original Formats</option>
                   <option value="image/webp">Convert to WebP (Smallest Size)</option>
                   <option value="image/jpeg">Convert to JPG / JPEG</option>
                   <option value="image/png">Convert to PNG</option>
                 </select>
-                <p className="text-[11px] text-slate-400">
+                <p className="text-[11px] text-[#64748B]">
                   WebP provides up to 30% smaller files than JPEG at identical quality.
                 </p>
               </div>
             </div>
 
             {/* Target KB limit */}
-            <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+            <div className="pt-2 border-t border-[#E5EAF1] flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <input
                   type="checkbox"
@@ -426,9 +434,9 @@ export default function CompressorTool() {
                   onChange={(e) =>
                     setSettings((s) => ({ ...s, enableTargetKB: e.target.checked }))
                   }
-                  className="w-4 h-4 rounded text-brand-600 focus:ring-brand-500"
+                  className="w-4 h-4 rounded text-[#3979E6] focus:ring-[#3979E6] border-[#E5EAF1]"
                 />
-                <label htmlFor="targetKbCheckBatch" className="text-xs font-semibold text-slate-800 cursor-pointer">
+                <label htmlFor="targetKbCheckBatch" className="text-xs font-semibold text-[#203247] cursor-pointer">
                   Target Specific File Size Limit (KB)
                 </label>
               </div>
@@ -442,24 +450,24 @@ export default function CompressorTool() {
                     onChange={(e) =>
                       setSettings((s) => ({ ...s, targetKB: Math.max(1, Number(e.target.value)) }))
                     }
-                    className="w-24 px-2 py-1 text-xs font-mono text-center rounded-lg border border-slate-200"
+                    className="w-24 px-2 py-1 text-xs font-mono text-center rounded-xl border border-[#E5EAF1] text-[#203247]"
                   />
-                  <span className="text-xs text-slate-500">KB per image</span>
+                  <span className="text-xs text-[#64748B]">KB per image</span>
                 </div>
               )}
             </div>
           </div>
 
           {/* Action Bar */}
-          <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="text-xs text-slate-600">
-              <strong className="text-slate-900">{items.length}</strong> {items.length === 1 ? 'image' : 'images'} queued • Original Total:{' '}
-              <strong className="text-slate-900">{formatBytes(totalOriginalSize)}</strong>
+          <div className="p-4 rounded-3xl bg-white border border-[#E5EAF1] shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="text-xs text-[#64748B]">
+              <strong className="text-[#203247]">{items.length}</strong> {items.length === 1 ? 'image' : 'images'} queued • Original Total:{' '}
+              <strong className="text-[#203247]">{formatBytes(totalOriginalSize)}</strong>
               {processedCount > 0 && (
                 <span>
                   {' '}
-                  → Compressed: <strong className="text-brand-700">{formatBytes(totalProcessedSize)}</strong>{' '}
-                  <span className="text-emerald-700 font-bold">(-{overallReduction}%)</span>
+                  → Compressed: <strong className="text-[#3979E6]">{formatBytes(totalProcessedSize)}</strong>{' '}
+                  <span className="text-[#36A879] font-bold">(-{overallReduction}%)</span>
                 </span>
               )}
             </div>
@@ -469,7 +477,7 @@ export default function CompressorTool() {
                 type="button"
                 disabled={isProcessingBatch}
                 onClick={processAll}
-                className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 disabled:opacity-50 text-white font-semibold text-xs shadow-sm transition-all min-h-[44px]"
+                className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#3979E6] hover:bg-[#2B68D1] disabled:opacity-50 text-white font-semibold text-xs shadow-sm transition-all min-h-[44px]"
               >
                 {isProcessingBatch ? (
                   <>
@@ -488,7 +496,7 @@ export default function CompressorTool() {
                 <button
                   type="button"
                   onClick={downloadAllAsZip}
-                  className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs shadow-sm transition-all min-h-[44px]"
+                  className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#36A879] hover:bg-[#2F946A] text-white font-semibold text-xs shadow-sm transition-all min-h-[44px]"
                 >
                   <Archive className="w-4 h-4" />
                   <span>Download ZIP ({processedCount})</span>
@@ -502,7 +510,7 @@ export default function CompressorTool() {
             {items.map((item) => (
               <div
                 key={item.id}
-                className="p-4 bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4 transition-all"
+                className="p-4 bg-white rounded-2xl border border-[#E5EAF1] shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4 transition-all"
               >
                 {/* Thumbnail & File Name */}
                 <div className="flex items-center gap-3 w-full sm:w-auto">
@@ -510,13 +518,13 @@ export default function CompressorTool() {
                   <img
                     src={item.previewUrl}
                     alt={item.name}
-                    className="w-12 h-12 rounded-xl object-cover border border-slate-200 bg-slate-50 shrink-0"
+                    className="w-12 h-12 rounded-xl object-cover border border-[#E5EAF1] bg-[#F7FAFF] shrink-0"
                   />
                   <div className="min-w-0">
-                    <div className="text-xs font-semibold text-slate-900 truncate max-w-[220px] sm:max-w-[280px]">
+                    <div className="text-xs font-semibold text-[#203247] truncate max-w-[220px] sm:max-w-[280px]">
                       {item.name}
                     </div>
-                    <div className="text-[11px] text-slate-400">
+                    <div className="text-[11px] text-[#64748B]">
                       {item.originalWidth} × {item.originalHeight} px • {formatBytes(item.originalSize)}
                     </div>
                   </div>
@@ -525,14 +533,14 @@ export default function CompressorTool() {
                 {/* Status / Output Comparison */}
                 <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end">
                   {item.status === 'processing' && (
-                    <div className="flex items-center gap-1.5 text-xs font-semibold text-brand-600">
+                    <div className="flex items-center gap-1.5 text-xs font-semibold text-[#3979E6]">
                       <RefreshCw className="w-3.5 h-3.5 animate-spin" />
                       <span>Compressing...</span>
                     </div>
                   )}
 
                   {item.status === 'error' && (
-                    <div className="flex items-center gap-1.5 text-xs font-semibold text-red-600">
+                    <div className="flex items-center gap-1.5 text-xs font-semibold text-[#E5634D]">
                       <AlertTriangle className="w-3.5 h-3.5" />
                       <span>{item.errorMessage || 'Error'}</span>
                     </div>
@@ -540,13 +548,13 @@ export default function CompressorTool() {
 
                   {item.status === 'done' && item.result && (
                     <div className="text-right">
-                      <div className="text-xs font-bold text-slate-900 flex items-center gap-1 justify-end">
+                      <div className="text-xs font-bold text-[#203247] flex items-center gap-1 justify-end">
                         <span>{formatBytes(item.result.sizeBytes)}</span>
-                        <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded">
+                        <span className="text-[11px] font-bold text-[#36A879] bg-[#DDF5E9] px-2 py-0.5 rounded-full">
                           -{item.result.compressionRatio}%
                         </span>
                       </div>
-                      <div className="text-[10px] text-slate-400">
+                      <div className="text-[10px] text-[#64748B]">
                         {item.result.width} × {item.result.height} px • {item.result.format.replace('image/', '').toUpperCase()}
                       </div>
                     </div>
@@ -558,7 +566,7 @@ export default function CompressorTool() {
                       <button
                         type="button"
                         onClick={() => downloadItem(item)}
-                        className="p-2 rounded-xl border border-slate-200 hover:border-brand-500 hover:bg-brand-50 text-slate-700 hover:text-brand-600 transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center"
+                        className="p-2 rounded-xl border border-[#E5EAF1] hover:border-[#36A879] hover:bg-[#DDF5E9] text-[#203247] hover:text-[#36A879] transition-colors min-h-[38px] min-w-[38px] flex items-center justify-center"
                         title="Download file"
                       >
                         <Download className="w-4 h-4" />
@@ -568,7 +576,7 @@ export default function CompressorTool() {
                     <button
                       type="button"
                       onClick={() => removeItem(item.id)}
-                      className="p-2 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center"
+                      className="p-2 rounded-xl text-[#94A3B8] hover:text-[#E5634D] hover:bg-[#FFB6A6]/20 transition-colors min-h-[38px] min-w-[38px] flex items-center justify-center"
                       title="Remove file"
                     >
                       <Trash2 className="w-4 h-4" />

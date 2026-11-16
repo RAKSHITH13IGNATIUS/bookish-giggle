@@ -75,7 +75,6 @@ export default function ResizerTool() {
 
   // Handle file selection with magic-byte validation
   const handleFile = async (selectedFile: File) => {
-    // Shared magic-byte validation
     const validation = await validateImageFile(selectedFile, ['jpeg', 'png']);
     if (!validation.valid) {
       setErrorMessage(validation.error || 'Please upload a valid JPG, JPEG, or PNG image.');
@@ -90,7 +89,6 @@ export default function ResizerTool() {
       const w = img.naturalWidth || img.width;
       const h = img.naturalHeight || img.height;
 
-      // Revoke old preview URL if exists
       if (originalPreviewUrl) {
         URL.revokeObjectURL(originalPreviewUrl);
       }
@@ -99,8 +97,8 @@ export default function ResizerTool() {
 
       setFile(selectedFile);
       setImageElement(img);
-      setOriginalDimensions({ width: w, height: h });
       setOriginalPreviewUrl(previewUrl);
+      setOriginalDimensions({ width: w, height: h });
       setAspectRatio(w / h);
 
       if (!selectedPresetId) {
@@ -108,13 +106,81 @@ export default function ResizerTool() {
         setHeight(h);
       }
     } catch (err: any) {
-      setErrorMessage(err.message || 'Failed to process file.');
-    } finally {
+      setErrorMessage('Could not decode the selected image file. Please check file format.');
       setIsProcessing(false);
     }
   };
 
-  // Drag and drop handlers
+  // Process image on canvas whenever settings change
+  const runProcessing = useCallback(async () => {
+    if (!imageElement || !file) return;
+
+    setIsProcessing(true);
+    setErrorMessage(null);
+
+    try {
+      const options: ResizeOptions = {
+        width,
+        height,
+        fitMode,
+        format,
+        targetKB: enableTargetSize ? targetKB : undefined,
+        backgroundColor: '#FFFFFF',
+      };
+
+      const res = await processPhotoOrSignature(imageElement, file, options);
+      setResult(res);
+    } catch (err: any) {
+      setErrorMessage(err.message || 'Image processing failed. Please adjust dimensions.');
+    } finally {
+      setIsProcessing(false);
+    }
+  }, [imageElement, file, width, height, fitMode, format, enableTargetSize, targetKB]);
+
+  // Trigger processing when dependencies change (debounced)
+  useEffect(() => {
+    if (!imageElement) return;
+
+    const timer = setTimeout(() => {
+      runProcessing();
+    }, 150);
+
+    return () => clearTimeout(timer);
+  }, [runProcessing, imageElement]);
+
+  // Dimension Change Handlers
+  const handleWidthChange = (newWidth: number) => {
+    const validWidth = Math.max(10, Math.min(8000, newWidth || 10));
+    setWidth(validWidth);
+    if (lockAspectRatio && aspectRatio > 0) {
+      setHeight(Math.round(validWidth / aspectRatio));
+    }
+    setSelectedPresetId(undefined);
+  };
+
+  const handleHeightChange = (newHeight: number) => {
+    const validHeight = Math.max(10, Math.min(8000, newHeight || 10));
+    setHeight(validHeight);
+    if (lockAspectRatio && aspectRatio > 0) {
+      setWidth(Math.round(validHeight * aspectRatio));
+    }
+    setSelectedPresetId(undefined);
+  };
+
+  // Preset Selection
+  const handleSelectPreset = (preset: Preset) => {
+    setSelectedPresetId(preset.id);
+    setWidth(preset.width);
+    setHeight(preset.height);
+    setLockAspectRatio(false);
+    setFormat(preset.format);
+    if (preset.targetMaxKB) {
+      setEnableTargetSize(true);
+      setTargetKB(preset.targetMaxKB);
+    }
+  };
+
+  // Drag and Drop
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -134,125 +200,60 @@ export default function ResizerTool() {
     }
   };
 
-  // Preset Selection
-  const handleSelectPreset = (preset: Preset) => {
-    setSelectedPresetId(preset.id);
-    setWidth(preset.width);
-    setHeight(preset.height);
-    setFormat(preset.format);
-    if (preset.targetMaxKB) {
-      setEnableTargetSize(true);
-      setTargetKB(preset.targetMaxKB);
-    } else {
-      setEnableTargetSize(false);
-    }
-    setLockAspectRatio(false);
-  };
-
-  // Width / Height changes with aspect ratio lock
-  const handleWidthChange = (newWidth: number) => {
-    const val = Math.max(1, Math.round(newWidth));
-    setWidth(val);
-    setSelectedPresetId(undefined);
-    if (lockAspectRatio && aspectRatio > 0) {
-      setHeight(Math.max(1, Math.round(val / aspectRatio)));
-    }
-  };
-
-  const handleHeightChange = (newHeight: number) => {
-    const val = Math.max(1, Math.round(newHeight));
-    setHeight(val);
-    setSelectedPresetId(undefined);
-    if (lockAspectRatio && aspectRatio > 0) {
-      setWidth(Math.max(1, Math.round(val * aspectRatio)));
-    }
-  };
-
-  // Re-run processing whenever options change
-  const triggerProcessing = useCallback(async () => {
-    if (!imageElement || !file) return;
-
-    setIsProcessing(true);
-    try {
-      const options: ResizeOptions = {
-        width,
-        height,
-        fitMode,
-        format,
-        targetKB: enableTargetSize ? targetKB : undefined,
-      };
-
-      // Clean up previous result data URL
-      if (result?.dataUrl) {
-        URL.revokeObjectURL(result.dataUrl);
-      }
-
-      const res = await processPhotoOrSignature(imageElement, file, options);
-      registerObjectUrl(res.dataUrl);
-      setResult(res);
-      setErrorMessage(null);
-    } catch (err: any) {
-      setErrorMessage(err.message || 'Compression failed.');
-    } finally {
-      setIsProcessing(false);
-    }
-  }, [imageElement, file, width, height, fitMode, format, enableTargetSize, targetKB]);
-
-  // Debounced effect for processing when inputs adjust
-  useEffect(() => {
-    if (!imageElement || !file) return;
-    const timer = setTimeout(() => {
-      triggerProcessing();
-    }, 180);
-    return () => clearTimeout(timer);
-  }, [triggerProcessing, imageElement, file]);
-
-  // Download handler
-  const handleDownload = () => {
-    if (!result || !file) return;
-    const ext = result.format === 'image/png' ? 'png' : 'jpg';
-    const baseName = file.name.substring(0, file.name.lastIndexOf('.')) || 'image';
-    const filename = `${baseName}_resized_${result.width}x${result.height}.${ext}`;
-    downloadBlob(result.blob, filename);
-  };
-
-  // Reset to upload state
+  // Reset tool
   const handleReset = () => {
-    if (originalPreviewUrl) URL.revokeObjectURL(originalPreviewUrl);
-    if (result?.dataUrl) URL.revokeObjectURL(result.dataUrl);
     setFile(null);
     setImageElement(null);
     setResult(null);
-    setOriginalPreviewUrl(null);
-    setSelectedPresetId(undefined);
     setErrorMessage(null);
+    setSelectedPresetId(undefined);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
   };
 
+  // Download Output
+  const handleDownload = () => {
+    if (!result) return;
+    const baseName = file ? file.name.replace(/\.[^/.]+$/, '') : 'image';
+    const ext = format === 'image/jpeg' ? 'jpg' : 'png';
+    const filename = `${baseName}-${width}x${height}.${ext}`;
+    downloadBlob(result.blob, filename);
+  };
+
   return (
-    <div className="space-y-10">
+    <div className="space-y-6">
+      {/* Error Message */}
       {errorMessage && (
-        <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center justify-between">
-          <span>{errorMessage}</span>
-          <button onClick={() => setErrorMessage(null)} className="font-bold ml-2">✕</button>
+        <div className="p-4 rounded-2xl bg-[#FFB6A6]/20 border border-[#FFB6A6] text-[#203247] text-sm flex items-start gap-3">
+          <AlertTriangle className="w-5 h-5 text-[#E5634D] shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="font-semibold text-[#203247]">File Notice</p>
+            <p className="text-xs text-[#64748B] mt-0.5">{errorMessage}</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setErrorMessage(null)}
+            className="text-xs text-[#64748B] hover:text-[#203247] font-semibold px-2 py-1"
+          >
+            Dismiss
+          </button>
         </div>
       )}
 
       {/* Upload Zone (if no file chosen) */}
       {!file ? (
-        <div className="max-w-3xl mx-auto">
+        <div className="max-w-3xl mx-auto space-y-8">
           <div
             onDragEnter={handleDrag}
             onDragLeave={handleDrag}
             onDragOver={handleDrag}
             onDrop={handleDrop}
             onClick={() => fileInputRef.current?.click()}
-            className={`border-2 border-dashed rounded-3xl p-8 sm:p-12 text-center cursor-pointer transition-all bg-white ${
+            className={`border-2 border-dashed rounded-3xl p-8 sm:p-12 text-center cursor-pointer transition-all duration-200 bg-white ${
               dragActive
-                ? 'border-brand-600 bg-brand-50/50 scale-[1.01]'
-                : 'border-slate-200 hover:border-brand-400 hover:bg-slate-50/50 shadow-sm'
+                ? 'border-[#3979E6] bg-[#E5F0FF]/50 scale-[1.01]'
+                : 'border-[#E5EAF1] hover:border-[#3979E6]/50 hover:bg-[#F7FAFF] shadow-sm'
             }`}
           >
             <input
@@ -266,24 +267,24 @@ export default function ResizerTool() {
                 }
               }}
             />
-            <div className="w-16 h-16 rounded-2xl bg-brand-50 text-brand-600 mx-auto flex items-center justify-center mb-4">
+            <div className="w-16 h-16 rounded-2xl bg-[#E5F0FF] text-[#3979E6] mx-auto flex items-center justify-center mb-4 transition-transform group-hover:scale-105">
               <Upload className="w-8 h-8" />
             </div>
-            <h3 className="text-lg font-bold text-slate-900 mb-1">
-              Select or Drag & Drop Photo or Signature
+            <h3 className="text-lg font-bold text-[#203247] mb-1">
+              Select or Drop Photo or Signature
             </h3>
-            <p className="text-xs sm:text-sm text-slate-500 mb-4 max-w-md mx-auto">
-              Supports JPG, JPEG, and PNG. Validates file header signatures locally. Zero server uploads.
+            <p className="text-xs sm:text-sm text-[#64748B] mb-5 max-w-md mx-auto">
+              Supports JPG, JPEG, and PNG. Validates file headers in your browser. Zero server uploads.
             </p>
-            <div className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold shadow-sm transition-all min-h-[44px]">
+            <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#3979E6] hover:bg-[#2B68D1] text-white text-sm font-semibold shadow-sm transition-all min-h-[44px]">
               <FileImage className="w-4 h-4" />
-              <span>Browse Image from Device</span>
+              <span>Choose Image from Device</span>
             </div>
           </div>
 
           {/* Preset guidelines reference */}
-          <div className="mt-10">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4">
+          <div>
+            <h4 className="text-xs font-bold uppercase tracking-wider text-[#64748B] mb-4">
               Supported Presets & Reference Specifications
             </h4>
             <PresetSelector
@@ -300,26 +301,26 @@ export default function ResizerTool() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* Controls Column (5 cols) */}
           <div className="lg:col-span-5 space-y-6">
-            <div className="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-sm space-y-6">
-              <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+            <div className="bg-white p-5 sm:p-6 rounded-3xl border border-[#E5EAF1] shadow-sm space-y-6">
+              <div className="flex items-center justify-between pb-4 border-b border-[#E5EAF1]">
                 <div className="flex items-center gap-2">
-                  <Sliders className="w-4 h-4 text-brand-600" />
-                  <span className="font-bold text-slate-900 text-sm">Resize & Compression Controls</span>
+                  <Sliders className="w-4 h-4 text-[#3979E6]" />
+                  <span className="font-bold text-[#203247] text-sm">Resize & Compression Controls</span>
                 </div>
                 <button
                   type="button"
                   onClick={handleReset}
-                  className="text-xs text-slate-500 hover:text-red-600 flex items-center gap-1 transition-colors min-h-[44px] px-2"
+                  className="text-xs text-[#64748B] hover:text-[#E5634D] flex items-center gap-1 transition-colors min-h-[44px] px-2"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
-                  <span>New Image</span>
+                  <span>New image</span>
                 </button>
               </div>
 
               {/* Exact Dimensions in Pixels */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                  <label className="text-xs font-semibold text-[#203247] uppercase tracking-wider">
                     Dimensions (Pixels)
                   </label>
                   <button
@@ -327,24 +328,24 @@ export default function ResizerTool() {
                     onClick={() => setLockAspectRatio(!lockAspectRatio)}
                     className={`inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg font-medium transition-colors min-h-[36px] ${
                       lockAspectRatio
-                        ? 'bg-brand-100 text-brand-700'
-                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                        ? 'bg-[#E5F0FF] text-[#3979E6]'
+                        : 'bg-[#F7FAFF] text-[#64748B] hover:bg-[#E5F0FF]'
                     }`}
                   >
                     {lockAspectRatio ? (
                       <>
-                        <Lock className="w-3 h-3" /> Locked Ratio
+                        <Lock className="w-3 h-3" /> Locked ratio
                       </>
                     ) : (
                       <>
-                        <Unlock className="w-3 h-3" /> Free Ratio
+                        <Unlock className="w-3 h-3" /> Free ratio
                       </>
                     )}
                   </button>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-[11px] font-medium text-slate-500 block mb-1">
+                    <label className="text-[11px] font-medium text-[#64748B] block mb-1">
                       Width (px)
                     </label>
                     <input
@@ -353,11 +354,11 @@ export default function ResizerTool() {
                       max={8000}
                       value={width}
                       onChange={(e) => handleWidthChange(Number(e.target.value))}
-                      className="w-full px-3 py-2 text-sm font-semibold rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500 min-h-[44px]"
+                      className="w-full px-3 py-2 text-sm font-semibold rounded-xl border border-[#E5EAF1] text-[#203247] focus:outline-none focus:ring-2 focus:ring-[#3979E6] min-h-[44px]"
                     />
                   </div>
                   <div>
-                    <label className="text-[11px] font-medium text-slate-500 block mb-1">
+                    <label className="text-[11px] font-medium text-[#64748B] block mb-1">
                       Height (px)
                     </label>
                     <input
@@ -366,7 +367,7 @@ export default function ResizerTool() {
                       max={8000}
                       value={height}
                       onChange={(e) => handleHeightChange(Number(e.target.value))}
-                      className="w-full px-3 py-2 text-sm font-semibold rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500 min-h-[44px]"
+                      className="w-full px-3 py-2 text-sm font-semibold rounded-xl border border-[#E5EAF1] text-[#203247] focus:outline-none focus:ring-2 focus:ring-[#3979E6] min-h-[44px]"
                     />
                   </div>
                 </div>
@@ -374,7 +375,7 @@ export default function ResizerTool() {
 
               {/* Fit Mode */}
               <div>
-                <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider block mb-2">
+                <label className="text-xs font-semibold text-[#203247] uppercase tracking-wider block mb-2">
                   Fit Mode
                 </label>
                 <div className="grid grid-cols-3 gap-2">
@@ -391,12 +392,12 @@ export default function ResizerTool() {
                       onClick={() => setFitMode(m.id)}
                       className={`p-2 rounded-xl text-left border transition-all min-h-[44px] ${
                         fitMode === m.id
-                          ? 'border-brand-600 bg-brand-50/70 text-brand-900 font-semibold'
-                          : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                          ? 'border-[#3979E6] bg-[#E5F0FF] text-[#203247] font-semibold'
+                          : 'border-[#E5EAF1] bg-white text-[#64748B] hover:bg-[#F7FAFF]'
                       }`}
                     >
-                      <div className="text-xs">{m.label}</div>
-                      <div className="text-[10px] text-slate-400 font-normal leading-tight">
+                      <div className="text-xs font-semibold">{m.label}</div>
+                      <div className="text-[10px] text-[#64748B] font-normal leading-tight">
                         {m.desc}
                       </div>
                     </button>
@@ -405,7 +406,7 @@ export default function ResizerTool() {
               </div>
 
               {/* Target File Size in KB */}
-              <div className="p-4 rounded-xl bg-slate-50/80 border border-slate-200/80 space-y-3">
+              <div className="p-4 rounded-2xl bg-[#F7FAFF] border border-[#E5EAF1] space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <input
@@ -413,14 +414,14 @@ export default function ResizerTool() {
                       id="targetKBCheck"
                       checked={enableTargetSize}
                       onChange={(e) => setEnableTargetSize(e.target.checked)}
-                      className="w-4 h-4 rounded text-brand-600 focus:ring-brand-500 border-slate-300"
+                      className="w-4 h-4 rounded text-[#3979E6] focus:ring-[#3979E6] border-[#E5EAF1]"
                     />
-                    <label htmlFor="targetKBCheck" className="text-xs font-semibold text-slate-900 cursor-pointer">
+                    <label htmlFor="targetKBCheck" className="text-xs font-semibold text-[#203247] cursor-pointer">
                       Target File Size Limit (KB)
                     </label>
                   </div>
                   {enableTargetSize && (
-                    <span className="text-xs font-mono font-bold text-brand-700 bg-brand-100 px-2 py-0.5 rounded">
+                    <span className="text-xs font-mono font-bold text-[#3979E6] bg-[#E5F0FF] px-2 py-0.5 rounded-full">
                       {targetKB} KB
                     </span>
                   )}
@@ -436,7 +437,7 @@ export default function ResizerTool() {
                         step={5}
                         value={targetKB}
                         onChange={(e) => setTargetKB(Number(e.target.value))}
-                        className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-brand-600"
+                        className="w-full h-1.5 bg-[#E5EAF1] rounded-lg appearance-none cursor-pointer accent-[#3979E6]"
                       />
                       <input
                         type="number"
@@ -444,11 +445,11 @@ export default function ResizerTool() {
                         max={5000}
                         value={targetKB}
                         onChange={(e) => setTargetKB(Math.max(1, Number(e.target.value)))}
-                        className="w-20 px-2 py-1 text-xs font-mono text-center rounded-lg border border-slate-200 bg-white min-h-[38px]"
+                        className="w-20 px-2 py-1 text-xs font-mono text-center rounded-lg border border-[#E5EAF1] bg-white text-[#203247] min-h-[38px]"
                       />
                     </div>
-                    <p className="text-[11px] text-slate-500">
-                      Smart iterative binary search adjusts JPEG quality factor to stay under limit.
+                    <p className="text-[11px] text-[#64748B]">
+                      Binary search optimization adjusts compression quality to match target size.
                     </p>
                   </div>
                 )}
@@ -456,7 +457,7 @@ export default function ResizerTool() {
 
               {/* Output Format */}
               <div>
-                <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider block mb-2">
+                <label className="text-xs font-semibold text-[#203247] uppercase tracking-wider block mb-2">
                   Output Format
                 </label>
                 <div className="grid grid-cols-2 gap-3">
@@ -465,31 +466,31 @@ export default function ResizerTool() {
                     onClick={() => setFormat('image/jpeg')}
                     className={`p-2.5 rounded-xl border text-left transition-all min-h-[44px] ${
                       format === 'image/jpeg'
-                        ? 'border-brand-600 bg-brand-50/70 text-brand-900 font-semibold'
-                        : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                        ? 'border-[#3979E6] bg-[#E5F0FF] text-[#203247] font-semibold'
+                        : 'border-[#E5EAF1] bg-white text-[#64748B] hover:bg-[#F7FAFF]'
                     }`}
                   >
-                    <div className="text-xs">JPG / JPEG</div>
-                    <div className="text-[10px] text-slate-400">Supports Target KB (Recommended)</div>
+                    <div className="text-xs font-semibold">JPG / JPEG</div>
+                    <div className="text-[10px] text-[#64748B]">Supports Target KB (Recommended)</div>
                   </button>
                   <button
                     type="button"
                     onClick={() => setFormat('image/png')}
                     className={`p-2.5 rounded-xl border text-left transition-all min-h-[44px] ${
                       format === 'image/png'
-                        ? 'border-brand-600 bg-brand-50/70 text-brand-900 font-semibold'
-                        : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                        ? 'border-[#3979E6] bg-[#E5F0FF] text-[#203247] font-semibold'
+                        : 'border-[#E5EAF1] bg-white text-[#64748B] hover:bg-[#F7FAFF]'
                     }`}
                   >
-                    <div className="text-xs">PNG</div>
-                    <div className="text-[10px] text-slate-400">Lossless lines</div>
+                    <div className="text-xs font-semibold">PNG</div>
+                    <div className="text-[10px] text-[#64748B]">Lossless lines</div>
                   </button>
                 </div>
               </div>
 
               {/* Presets */}
-              <div className="pt-2 border-t border-slate-100">
-                <span className="text-xs font-semibold text-slate-700 block mb-2">
+              <div className="pt-2 border-t border-[#E5EAF1]">
+                <span className="text-xs font-semibold text-[#203247] block mb-2">
                   Apply Preset
                 </span>
                 <PresetSelector
@@ -502,44 +503,44 @@ export default function ResizerTool() {
 
           {/* Preview & Download Column (7 cols) */}
           <div className="lg:col-span-7 space-y-6">
-            <div className="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-sm space-y-6">
+            <div className="bg-white p-5 sm:p-6 rounded-3xl border border-[#E5EAF1] shadow-sm space-y-6">
               {/* Header with Metrics Comparison */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 p-4 rounded-xl bg-slate-50 border border-slate-200/80">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 p-4 rounded-2xl bg-[#F7FAFF] border border-[#E5EAF1]">
                 <div>
-                  <div className="text-[10px] uppercase font-bold text-slate-400">Original</div>
-                  <div className="text-xs font-bold text-slate-800">
+                  <div className="text-[10px] uppercase font-bold text-[#64748B]">Original</div>
+                  <div className="text-xs font-bold text-[#203247]">
                     {originalDimensions.width} × {originalDimensions.height} px
                   </div>
-                  <div className="text-[11px] text-slate-500">
+                  <div className="text-[11px] text-[#64748B]">
                     {file ? formatBytes(file.size) : '0 KB'}
                   </div>
                 </div>
 
                 <div>
-                  <div className="text-[10px] uppercase font-bold text-brand-600">Processed Output</div>
-                  <div className="text-xs font-bold text-brand-900">
+                  <div className="text-[10px] uppercase font-bold text-[#3979E6]">Output Result</div>
+                  <div className="text-xs font-bold text-[#203247]">
                     {result ? `${result.width} × ${result.height} px` : `${width} × ${height} px`}
                   </div>
-                  <div className="text-[11px] font-semibold text-brand-700">
+                  <div className="text-[11px] font-semibold text-[#3979E6]">
                     {result ? formatBytes(result.sizeBytes) : 'Computing...'}
                   </div>
                 </div>
 
-                <div className="col-span-2 sm:col-span-1 border-t sm:border-t-0 sm:border-l border-slate-200 pt-2 sm:pt-0 sm:pl-3">
-                  <div className="text-[10px] uppercase font-bold text-slate-400">Status</div>
+                <div className="col-span-2 sm:col-span-1 border-t sm:border-t-0 sm:border-l border-[#E5EAF1] pt-2 sm:pt-0 sm:pl-3">
+                  <div className="text-[10px] uppercase font-bold text-[#64748B]">Status</div>
                   {result?.reachedTarget ? (
-                    <div className="flex items-center gap-1 text-xs font-semibold text-emerald-700">
-                      <CheckCircle className="w-3.5 h-3.5 text-emerald-600" />
+                    <div className="flex items-center gap-1 text-xs font-semibold text-[#36A879]">
+                      <CheckCircle className="w-3.5 h-3.5" />
                       <span>Target Met</span>
                     </div>
                   ) : (
-                    <div className="flex items-center gap-1 text-xs font-semibold text-amber-700">
-                      <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
+                    <div className="flex items-center gap-1 text-xs font-semibold text-[#B87D09]">
+                      <AlertTriangle className="w-3.5 h-3.5" />
                       <span>Exceeds Target</span>
                     </div>
                   )}
                   {result && (
-                    <div className="text-[10px] text-slate-500">
+                    <div className="text-[10px] text-[#64748B]">
                       {result.compressionRatio > 0 ? `-${result.compressionRatio}% size` : 'No reduction'}
                     </div>
                   )}
@@ -548,10 +549,10 @@ export default function ResizerTool() {
 
               {/* Warning if Target could not be satisfied */}
               {result && !result.reachedTarget && enableTargetSize && (
-                <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-start gap-2">
-                  <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                <div className="p-3.5 rounded-2xl bg-[#FFE7A3]/30 border border-[#FFE7A3] text-[#203247] text-xs flex items-start gap-2">
+                  <AlertTriangle className="w-4 h-4 text-[#B87D09] shrink-0 mt-0.5" />
                   <p>
-                    Image reached minimum quality at {formatBytes(result.sizeBytes)}. Reduce pixel dimensions to satisfy target limit of {targetKB} KB.
+                    Image reached minimum quality factor at {formatBytes(result.sizeBytes)}. Reduce pixel dimensions to satisfy target limit of {targetKB} KB.
                   </p>
                 </div>
               )}
@@ -559,18 +560,18 @@ export default function ResizerTool() {
               {/* Preview Canvas */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700 uppercase tracking-wider">
-                    <Eye className="w-4 h-4 text-brand-600" />
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-[#203247] uppercase tracking-wider">
+                    <Eye className="w-4 h-4 text-[#3979E6]" />
                     <span>Live Preview</span>
                   </div>
-                  <div className="flex items-center gap-1 bg-slate-100 p-0.5 rounded-lg text-xs font-medium">
+                  <div className="flex items-center gap-1 bg-[#F7FAFF] p-1 rounded-xl border border-[#E5EAF1] text-xs font-medium">
                     <button
                       type="button"
                       onClick={() => setPreviewTab('processed')}
-                      className={`px-3 py-1 rounded-md transition-colors min-h-[36px] ${
+                      className={`px-3 py-1 rounded-lg transition-colors min-h-[32px] ${
                         previewTab === 'processed'
-                          ? 'bg-white text-brand-700 shadow-sm font-semibold'
-                          : 'text-slate-600 hover:text-slate-900'
+                          ? 'bg-white text-[#3979E6] shadow-sm font-semibold'
+                          : 'text-[#64748B] hover:text-[#203247]'
                       }`}
                     >
                       Result
@@ -578,10 +579,10 @@ export default function ResizerTool() {
                     <button
                       type="button"
                       onClick={() => setPreviewTab('original')}
-                      className={`px-3 py-1 rounded-md transition-colors min-h-[36px] ${
+                      className={`px-3 py-1 rounded-lg transition-colors min-h-[32px] ${
                         previewTab === 'original'
-                          ? 'bg-white text-brand-700 shadow-sm font-semibold'
-                          : 'text-slate-600 hover:text-slate-900'
+                          ? 'bg-white text-[#3979E6] shadow-sm font-semibold'
+                          : 'text-[#64748B] hover:text-[#203247]'
                       }`}
                     >
                       Original
@@ -589,10 +590,10 @@ export default function ResizerTool() {
                   </div>
                 </div>
 
-                <div className="relative min-h-[280px] max-h-[420px] bg-slate-100/80 rounded-2xl border border-slate-200/80 flex items-center justify-center p-4 overflow-hidden">
+                <div className="relative min-h-[280px] max-h-[420px] bg-[#F7FAFF] rounded-2xl border border-[#E5EAF1] flex items-center justify-center p-4 overflow-hidden">
                   {isProcessing && (
                     <div className="absolute inset-0 bg-white/70 backdrop-blur-xs flex items-center justify-center z-10">
-                      <div className="flex items-center gap-2 text-xs font-semibold text-brand-600 bg-white px-3 py-2 rounded-xl shadow-md border border-slate-200">
+                      <div className="flex items-center gap-2 text-xs font-semibold text-[#3979E6] bg-white px-3 py-2 rounded-xl shadow-md border border-[#E5EAF1]">
                         <RefreshCw className="w-4 h-4 animate-spin" />
                         <span>Applying changes...</span>
                       </div>
@@ -604,7 +605,7 @@ export default function ResizerTool() {
                     <img
                       src={result.dataUrl}
                       alt="Processed Output"
-                      className="max-h-[360px] max-w-full object-contain rounded-lg shadow-sm border border-slate-200 bg-white"
+                      className="max-h-[360px] max-w-full object-contain rounded-lg shadow-sm border border-[#E5EAF1] bg-white"
                     />
                   )}
 
@@ -613,23 +614,23 @@ export default function ResizerTool() {
                     <img
                       src={originalPreviewUrl}
                       alt="Original Input"
-                      className="max-h-[360px] max-w-full object-contain rounded-lg shadow-sm border border-slate-200 bg-white"
+                      className="max-h-[360px] max-w-full object-contain rounded-lg shadow-sm border border-[#E5EAF1] bg-white"
                     />
                   )}
                 </div>
               </div>
 
               {/* Action Buttons */}
-              <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div className="text-xs text-slate-500">
-                  Ready in <strong className="text-slate-800 uppercase">{format.replace('image/', '')}</strong> format ({result ? formatBytes(result.sizeBytes) : '...'})
+              <div className="pt-4 border-t border-[#E5EAF1] flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="text-xs text-[#64748B]">
+                  Format: <strong className="text-[#203247] uppercase">{format.replace('image/', '')}</strong> ({result ? formatBytes(result.sizeBytes) : '...'})
                 </div>
 
                 <button
                   type="button"
                   disabled={!result || isProcessing}
                   onClick={handleDownload}
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-brand-600 hover:bg-brand-700 disabled:opacity-50 text-white font-semibold text-sm shadow-sm transition-all min-h-[48px]"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-[#36A879] hover:bg-[#2F946A] disabled:opacity-50 text-white font-semibold text-sm shadow-sm transition-all min-h-[48px]"
                 >
                   <Download className="w-4 h-4" />
                   <span>Download Resized Image</span>

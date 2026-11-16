@@ -1,29 +1,28 @@
 import type { Metadata } from 'next';
 import HeicConverterTool from '@/components/HeicToJpg/HeicConverterTool';
-import { ShieldCheck, Zap, Lock, HelpCircle, Check, AlertTriangle } from 'lucide-react';
+import { Lock, Zap, ShieldCheck, HelpCircle, AlertTriangle } from 'lucide-react';
 import { getCanonicalMetadata } from '@/lib/seo';
 
 export const metadata: Metadata = {
-  title: 'HEIC to JPG Converter Online - Free and Private',
+  title: 'HEIC to JPG Converter - Free, Batch & 100% In-Browser Privacy',
   description:
-    'Convert HEIC and HEIF photos to JPG in your browser. Process images locally without uploading your files.',
+    'Convert iPhone and Apple HEIC photos to JPG or PNG in your web browser. Free batch conversion with zero cloud uploads for maximum security and instant speed.',
   keywords: [
     'heic to jpg',
-    'heic converter',
     'convert heic to jpg',
+    'heic to jpg converter',
+    'apple photo to jpg',
+    'iphone heic to jpg',
     'heif to jpg',
-    'iphone photo to jpg',
-    'free heic converter',
-    'private heic to jpg',
     'batch heic to jpg',
+    'free heic converter',
   ],
   alternates: getCanonicalMetadata('/heic-to-jpg'),
   openGraph: {
-    title: 'HEIC to JPG Converter Online - Free & Private | NimbleFile',
+    title: 'HEIC to JPG Converter | NimbleFile',
     description:
-      'Convert iPhone and Apple HEIC photos to standard JPG images directly in your browser with zero server uploads.',
+      'Convert Apple HEIC photos to JPG locally in your browser. Fast, batch-ready, and 100% private with no server file uploads.',
     url: '/heic-to-jpg',
-    type: 'website',
   },
 };
 
@@ -40,7 +39,7 @@ export default function HeicToJpgPage() {
       priceCurrency: 'USD',
     },
     description:
-      'Free, in-browser tool to convert Apple HEIC and HEIF photos into universally compatible JPG images without uploading files to remote servers.',
+      'Free in-browser HEIC to JPG image converter supporting batch conversion of Apple .heic and .heif photos directly on your computer or phone.',
   };
 
   const faqJsonLd = {
@@ -52,7 +51,7 @@ export default function HeicToJpgPage() {
         name: 'What is a HEIC file?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'HEIC (High Efficiency Image Container) is the default image format used by Apple devices running iOS 11 and later. It uses modern HEVC video compression algorithms to store photos at higher quality and half the file size of traditional JPEGs.',
+          text: 'HEIC (High Efficiency Image Container) is the default image format used by Apple devices running iOS 11 and later. It uses modern HEVC compression algorithms to store photos at high quality and half the file size of traditional JPEGs.',
         },
       },
       {
@@ -60,7 +59,7 @@ export default function HeicToJpgPage() {
         name: 'Why should I convert HEIC photos to JPG?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'While HEIC offers excellent compression, many non-Apple platforms, older Windows systems, web forms, and document portals do not natively support HEIC files. Converting them to JPG ensures universal compatibility with any device or application.',
+          text: 'While HEIC offers excellent compression, many non-Apple platforms, older Windows systems, web forms, and document portals do not natively support HEIC files. Converting them to JPG ensures universal compatibility.',
         },
       },
       {
@@ -95,18 +94,14 @@ export default function HeicToJpgPage() {
       />
 
       {/* Header */}
-      <div className="space-y-3 text-center sm:text-left">
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-50 border border-brand-200/60 text-brand-700 text-xs font-semibold">
-          <Zap className="w-3.5 h-3.5" />
-          <span>In-Browser Client-Side Conversion</span>
-        </div>
-        <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900">
-          Convert HEIC to JPG
+      <section className="text-center max-w-3xl mx-auto space-y-3 pt-2">
+        <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-[#203247]">
+          HEIC to JPG Converter
         </h1>
-        <p className="text-base text-slate-600 max-w-2xl leading-relaxed">
+        <p className="text-sm sm:text-base text-[#64748B] max-w-xl mx-auto leading-relaxed">
           Convert iPhone and Apple HEIC/HEIF photos into standard JPG or PNG images. Fast, batch-ready, and 100% private with no server file uploads.
         </p>
-      </div>
+      </section>
 
       {/* Interactive Tool Card */}
       <section aria-label="HEIC to JPG Tool">
@@ -114,71 +109,71 @@ export default function HeicToJpgPage() {
       </section>
 
       {/* Trust & Performance Pillars */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5 pt-4">
-        <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-sm space-y-2">
-          <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5 pt-2">
+        <div className="p-5 rounded-2xl bg-white border border-[#E5EAF1] shadow-xs space-y-2">
+          <div className="w-9 h-9 rounded-xl bg-[#DDF5E9] text-[#36A879] flex items-center justify-center">
             <Lock className="w-5 h-5" />
           </div>
-          <h2 className="text-sm font-bold text-slate-900">100% Private Processing</h2>
-          <p className="text-xs text-slate-500 leading-relaxed">
+          <h2 className="text-sm font-bold text-[#203247]">100% Private Processing</h2>
+          <p className="text-xs text-[#64748B] leading-relaxed">
             Your photos are processed directly in your browser. They are never transmitted to external servers, cloud databases, or third-party APIs.
           </p>
         </div>
 
-        <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-sm space-y-2">
-          <div className="w-9 h-9 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center">
+        <div className="p-5 rounded-2xl bg-white border border-[#E5EAF1] shadow-xs space-y-2">
+          <div className="w-9 h-9 rounded-xl bg-[#E5F0FF] text-[#3979E6] flex items-center justify-center">
             <Zap className="w-5 h-5" />
           </div>
-          <h2 className="text-sm font-bold text-slate-900">Instant Local Speed</h2>
-          <p className="text-xs text-slate-500 leading-relaxed">
+          <h2 className="text-sm font-bold text-[#203247]">Instant Local Speed</h2>
+          <p className="text-xs text-[#64748B] leading-relaxed">
             Conversion runs via compiled WebAssembly directly on your CPU. No waiting for network upload and download queues.
           </p>
         </div>
 
-        <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-sm space-y-2">
-          <div className="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+        <div className="p-5 rounded-2xl bg-white border border-[#E5EAF1] shadow-xs space-y-2">
+          <div className="w-9 h-9 rounded-xl bg-[#FFE7A3]/50 text-[#B87D09] flex items-center justify-center">
             <ShieldCheck className="w-5 h-5" />
           </div>
-          <h2 className="text-sm font-bold text-slate-900">Batch Processing</h2>
-          <p className="text-xs text-slate-500 leading-relaxed">
+          <h2 className="text-sm font-bold text-[#203247]">Batch Processing</h2>
+          <p className="text-xs text-[#64748B] leading-relaxed">
             Queue multiple iPhone photos at once. Sequential memory-safe processing prevents browser tab crashes on mobile devices.
           </p>
         </div>
       </div>
 
       {/* How to use */}
-      <section className="bg-white rounded-2xl border border-slate-200/80 p-6 sm:p-8 shadow-sm space-y-6">
-        <h2 className="text-xl font-bold text-slate-900">
-          How to Convert HEIC to JPG Online
+      <section className="bg-white rounded-3xl border border-[#E5EAF1] p-6 sm:p-8 shadow-sm space-y-6">
+        <h2 className="text-xl font-bold text-[#203247]">
+          How to convert HEIC to JPG online
         </h2>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="space-y-2">
-            <div className="w-7 h-7 rounded-full bg-brand-100 text-brand-700 text-xs font-bold flex items-center justify-center">
+            <div className="w-7 h-7 rounded-full bg-[#E5F0FF] text-[#3979E6] text-xs font-bold flex items-center justify-center font-mono">
               1
             </div>
-            <h3 className="text-sm font-semibold text-slate-900">Select HEIC Photos</h3>
-            <p className="text-xs text-slate-500 leading-relaxed">
+            <h3 className="text-sm font-bold text-[#203247]">Select HEIC Photos</h3>
+            <p className="text-xs text-[#64748B] leading-relaxed">
               Drag and drop your .heic or .heif files from your iPhone, Mac, or PC into the upload area above.
             </p>
           </div>
 
           <div className="space-y-2">
-            <div className="w-7 h-7 rounded-full bg-brand-100 text-brand-700 text-xs font-bold flex items-center justify-center">
+            <div className="w-7 h-7 rounded-full bg-[#E5F0FF] text-[#3979E6] text-xs font-bold flex items-center justify-center font-mono">
               2
             </div>
-            <h3 className="text-sm font-semibold text-slate-900">Adjust Quality</h3>
-            <p className="text-xs text-slate-500 leading-relaxed">
+            <h3 className="text-sm font-bold text-[#203247]">Adjust Quality</h3>
+            <p className="text-xs text-[#64748B] leading-relaxed">
               Choose your target JPEG compression quality (default 92%) or switch to lossless PNG output.
             </p>
           </div>
 
           <div className="space-y-2">
-            <div className="w-7 h-7 rounded-full bg-brand-100 text-brand-700 text-xs font-bold flex items-center justify-center">
+            <div className="w-7 h-7 rounded-full bg-[#E5F0FF] text-[#3979E6] text-xs font-bold flex items-center justify-center font-mono">
               3
             </div>
-            <h3 className="text-sm font-semibold text-slate-900">Download Converted JPGs</h3>
-            <p className="text-xs text-slate-500 leading-relaxed">
+            <h3 className="text-sm font-bold text-[#203247]">Download Converted JPGs</h3>
+            <p className="text-xs text-[#64748B] leading-relaxed">
               Click &quot;Convert to JPG&quot;. Download individual images immediately or bundle all files into a single ZIP.
             </p>
           </div>
@@ -186,88 +181,88 @@ export default function HeicToJpgPage() {
       </section>
 
       {/* Educational Guide */}
-      <section className="bg-white rounded-2xl border border-slate-200/80 p-6 sm:p-8 shadow-sm space-y-6">
-        <h2 className="text-xl font-bold text-slate-900">
-          Understanding the HEIC Format
+      <section className="bg-white rounded-3xl border border-[#E5EAF1] p-6 sm:p-8 shadow-sm space-y-6">
+        <h2 className="text-xl font-bold text-[#203247]">
+          Understanding the HEIC format
         </h2>
 
-        <div className="prose prose-slate max-w-none text-xs sm:text-sm text-slate-600 space-y-4 leading-relaxed">
+        <div className="text-xs sm:text-sm text-[#64748B] space-y-4 leading-relaxed">
           <p>
-            <strong>HEIC</strong> (High Efficiency Image Container) is Apple&apos;s implementation of the HEIF (High Efficiency Image File) standard. Since iOS 11 and macOS High Sierra, Apple devices take photos in HEIC by default instead of JPEG because HEIC achieves approximately double the compression efficiency of standard JPEG at equal visual fidelity.
+            <strong>HEIC</strong> (High Efficiency Image Container) is Apple&apos;s implementation of the HEIF standard. Apple devices take photos in HEIC by default because it achieves approximately double the compression efficiency of standard JPEG at equal visual fidelity.
           </p>
 
-          <h3 className="text-base font-bold text-slate-800 pt-2">
+          <h3 className="text-sm font-bold text-[#203247] pt-2">
             Why Convert HEIC to JPG?
           </h3>
           <ul className="list-disc pl-5 space-y-1.5">
             <li>
-              <strong>Windows Compatibility:</strong> Default Windows photo viewers and legacy versions of Windows 10/11 require paid codec extensions from the Microsoft Store to display HEIC files.
+              <strong>Windows Compatibility:</strong> Many Windows photo viewers and older systems require additional paid extensions to view HEIC files.
             </li>
             <li>
               <strong>Web Forms and Application Portals:</strong> Most government recruitment portals, university admission forms, and e-commerce listings strictly mandate JPG or PNG uploads.
             </li>
             <li>
-              <strong>Software Compatibility:</strong> Many desktop photo editing tools, design suites, and office applications do not support HEIC importing.
+              <strong>Software Compatibility:</strong> Desktop photo editing tools, design suites, and office apps often require standard JPEG format.
             </li>
           </ul>
 
-          <div className="p-4 rounded-xl bg-amber-50/70 border border-amber-200/80 text-amber-900 text-xs space-y-1.5">
+          <div className="p-4 rounded-2xl bg-[#FFE7A3]/30 border border-[#FFE7A3] text-[#203247] text-xs space-y-1.5">
             <div className="flex items-center gap-1.5 font-bold">
-              <AlertTriangle className="w-4 h-4 text-amber-700 shrink-0" />
-              <span>Known Limitations of In-Browser Conversion</span>
+              <AlertTriangle className="w-4 h-4 text-[#B87D09] shrink-0" />
+              <span>Notes on In-Browser Conversion</span>
             </div>
             <p>
-              1. <strong>Metadata Handling:</strong> During in-browser decoding, EXIF metadata (camera model, GPS coordinates, shutter details) is discarded to protect privacy and prevent canvas errors.
+              1. <strong>Metadata Handling:</strong> During in-browser decoding, EXIF metadata (camera model, GPS coordinates) is stripped to protect privacy and prevent errors.
             </p>
             <p>
-              2. <strong>Memory Usage:</strong> Decoding high-resolution photos (such as 48 MP iPhone RAW photos) demands substantial temporary RAM. We process batch files sequentially to prevent mobile browser crashes.
+              2. <strong>Memory Usage:</strong> Decoding high-resolution photos demands temporary memory. We process batch files sequentially to prevent mobile browser crashes.
             </p>
           </div>
         </div>
       </section>
 
       {/* Frequently Asked Questions */}
-      <section className="bg-white rounded-2xl border border-slate-200/80 p-6 sm:p-8 shadow-sm space-y-6">
+      <section className="bg-white rounded-3xl border border-[#E5EAF1] p-6 sm:p-8 shadow-sm space-y-5">
         <div className="flex items-center gap-2">
-          <HelpCircle className="w-5 h-5 text-brand-600" />
-          <h2 className="text-xl font-bold text-slate-900">
+          <HelpCircle className="w-5 h-5 text-[#3979E6]" />
+          <h2 className="text-xl font-bold text-[#203247]">
             Frequently Asked Questions
           </h2>
         </div>
 
-        <div className="divide-y divide-slate-100 text-sm">
-          <div className="py-4 space-y-1.5">
-            <h3 className="font-semibold text-slate-900">
+        <div className="divide-y divide-[#E5EAF1] text-sm">
+          <div className="py-4 space-y-1">
+            <h3 className="font-bold text-[#203247]">
               Is this HEIC to JPG converter free to use?
             </h3>
-            <p className="text-slate-500 text-xs leading-relaxed">
+            <p className="text-[#64748B] text-xs leading-relaxed">
               Yes, 100% free with no account creation, email requirement, or hidden paywalls.
             </p>
           </div>
 
-          <div className="py-4 space-y-1.5">
-            <h3 className="font-semibold text-slate-900">
+          <div className="py-4 space-y-1">
+            <h3 className="font-bold text-[#203247]">
               Are my photos uploaded to a cloud server?
             </h3>
-            <p className="text-slate-500 text-xs leading-relaxed">
+            <p className="text-[#64748B] text-xs leading-relaxed">
               Never. All processing happens on your local device inside your web browser. If you disconnect your internet connection after loading the page, the tool continues to convert files offline.
             </p>
           </div>
 
-          <div className="py-4 space-y-1.5">
-            <h3 className="font-semibold text-slate-900">
+          <div className="py-4 space-y-1">
+            <h3 className="font-bold text-[#203247]">
               Can I convert multiple HEIC files at once?
             </h3>
-            <p className="text-slate-500 text-xs leading-relaxed">
+            <p className="text-[#64748B] text-xs leading-relaxed">
               Yes. You can select or drag multiple HEIC files. The tool processes each photo sequentially to avoid mobile browser memory limits, and lets you download all results in a single ZIP file.
             </p>
           </div>
 
-          <div className="py-4 space-y-1.5">
-            <h3 className="font-semibold text-slate-900">
+          <div className="py-4 space-y-1">
+            <h3 className="font-bold text-[#203247]">
               Does this tool support Live Photos or HEIC image bursts?
             </h3>
-            <p className="text-slate-500 text-xs leading-relaxed">
+            <p className="text-[#64748B] text-xs leading-relaxed">
               The converter extracts and decodes the primary still photo from Apple HEIC container files. Embedded video components of Apple Live Photos are ignored.
             </p>
           </div>

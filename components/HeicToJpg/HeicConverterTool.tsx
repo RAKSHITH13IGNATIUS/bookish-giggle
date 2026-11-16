@@ -3,7 +3,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   UploadCloud,
-  FileCheck,
   Download,
   Trash2,
   AlertCircle,
@@ -107,48 +106,52 @@ export default function HeicConverterTool() {
     });
     setQueue([]);
     setGlobalError(null);
-    setCurrentProcessingIndex(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
   };
 
-  // Process files sequentially to safeguard mobile device memory
   const convertAll = async () => {
     if (isProcessing) return;
+
     setIsProcessing(true);
     setGlobalError(null);
 
-    const pendingItems = queue.filter((item) => item.status === 'pending');
-    if (pendingItems.length === 0) {
-      setIsProcessing(false);
-      return;
-    }
-
     for (let i = 0; i < queue.length; i++) {
-      const current = queue[i];
-      if (current.status !== 'pending') continue;
+      const item = queue[i];
+      if (item.status === 'completed' || item.status === 'failed') continue;
 
       setCurrentProcessingIndex(i);
-
-      // Mark converting
       setQueue((prev) =>
-        prev.map((item, idx) => (idx === i ? { ...item, status: 'converting' } : item))
+        prev.map((q, idx) => (idx === i ? { ...q, status: 'converting', error: undefined } : q))
       );
 
       try {
-        const result = await convertHeicFile(current.file, {
+        const result = await convertHeicFile(item.file, {
           toType: outputFormat,
           quality: outputFormat === 'image/jpeg' ? quality : undefined,
         });
 
         setQueue((prev) =>
-          prev.map((item, idx) => (idx === i ? { ...item, status: 'completed', result } : item))
+          prev.map((q, idx) =>
+            idx === i
+              ? {
+                  ...q,
+                  status: 'completed',
+                  result,
+                }
+              : q
+          )
         );
       } catch (err: any) {
-        const message = err?.message || 'Conversion failed.';
+        const errMsg = err?.message || 'Conversion failed.';
         setQueue((prev) =>
-          prev.map((item, idx) => (idx === i ? { ...item, status: 'failed', error: message } : item))
+          prev.map((q, idx) =>
+            idx === i
+              ? {
+                  ...q,
+                  status: 'failed',
+                  error: errMsg,
+                }
+              : q
+          )
         );
       }
     }
@@ -159,25 +162,26 @@ export default function HeicConverterTool() {
 
   const downloadItem = (item: QueueItem) => {
     if (!item.result?.blob) return;
-    const baseName = item.name.replace(/\.[^/.]+$/, '');
-    const ext = outputFormat === 'image/png' ? 'png' : 'jpg';
-    downloadBlob(item.result.blob, `${baseName}.${ext}`);
+    const baseName = item.name.replace(/\.(heic|heif|hif)$/i, '');
+    const extension = outputFormat === 'image/png' ? 'png' : 'jpg';
+    downloadBlob(item.result.blob, `${baseName}.${extension}`);
   };
 
   const downloadAllZip = async () => {
-    const completedItems = queue.filter((i) => i.status === 'completed' && i.result?.blob);
+    const completedItems = queue.filter(
+      (item): item is QueueItem & { result: HeicConversionResult } =>
+        item.status === 'completed' && Boolean(item.result?.blob)
+    );
+
     if (completedItems.length === 0) return;
 
-    const filesToZip = completedItems.map((item) => {
-      const baseName = item.name.replace(/\.[^/.]+$/, '');
-      const ext = outputFormat === 'image/png' ? 'png' : 'jpg';
-      return {
-        filename: `${baseName}.${ext}`,
-        blob: item.result!.blob,
-      };
-    });
+    const extension = outputFormat === 'image/png' ? 'png' : 'jpg';
+    const zipEntries = completedItems.map((item) => ({
+      filename: `${item.name.replace(/\.(heic|heif|hif)$/i, '')}.${extension}`,
+      blob: item.result.blob,
+    }));
 
-    await downloadZipArchive(filesToZip, 'nimblefile-converted-photos.zip');
+    await downloadZipArchive(zipEntries, 'converted_heic_images.zip');
   };
 
   const completedCount = queue.filter((i) => i.status === 'completed').length;
@@ -185,7 +189,7 @@ export default function HeicConverterTool() {
 
   return (
     <div className="space-y-6">
-      {/* Upload Drop Zone */}
+      {/* Drag & Drop Upload Zone */}
       <div
         onDragOver={(e) => {
           e.preventDefault();
@@ -194,10 +198,10 @@ export default function HeicConverterTool() {
         onDragLeave={() => setIsDragOver(false)}
         onDrop={handleDrop}
         onClick={() => fileInputRef.current?.click()}
-        className={`relative border-2 border-dashed rounded-2xl p-8 sm:p-12 text-center cursor-pointer transition-all duration-200 ${
+        className={`border-2 border-dashed rounded-3xl p-8 sm:p-12 text-center cursor-pointer transition-all duration-200 ${
           isDragOver
-            ? 'border-brand-500 bg-brand-50/50 scale-[0.99]'
-            : 'border-slate-300 hover:border-brand-400 bg-white hover:bg-slate-50/60 shadow-sm'
+            ? 'border-[#3979E6] bg-[#E5F0FF]/50 scale-[1.01]'
+            : 'border-[#E5EAF1] hover:border-[#3979E6]/50 bg-white hover:bg-[#F7FAFF] shadow-sm'
         }`}
       >
         <input
@@ -214,42 +218,42 @@ export default function HeicConverterTool() {
         />
 
         <div className="flex flex-col items-center justify-center space-y-3">
-          <div className="w-14 h-14 rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center">
-            <UploadCloud className="w-7 h-7" />
+          <div className="w-16 h-16 rounded-2xl bg-[#FFB6A6]/25 text-[#E5634D] flex items-center justify-center transition-transform group-hover:scale-105">
+            <UploadCloud className="w-8 h-8" />
           </div>
 
           <div className="space-y-1">
-            <p className="text-base font-semibold text-slate-800">
-              Drop Apple HEIC or HEIF photos here, or <span className="text-brand-600 underline">browse</span>
+            <p className="text-base font-bold text-[#203247]">
+              Select or Drop Apple HEIC or HEIF Photos
             </p>
-            <p className="text-xs text-slate-600">
-              Supports standard iPhone and iPad .heic and .heif photos up to 50 MB each
+            <p className="text-xs sm:text-sm text-[#64748B]">
+              Supports iPhone and iPad .heic and .heif photos up to 50 MB each
             </p>
           </div>
 
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 text-slate-600 text-xs font-medium">
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#DDF5E9] border border-[#36A879]/20 text-[#36A879] text-xs font-semibold">
+            <ShieldCheck className="w-3.5 h-3.5" />
             <span>Files never leave your browser</span>
           </div>
         </div>
       </div>
 
       {globalError && (
-        <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-sm flex items-start gap-2.5">
-          <AlertCircle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+        <div className="p-4 rounded-2xl bg-[#FFB6A6]/20 border border-[#FFB6A6] text-[#203247] text-xs flex items-start gap-2.5">
+          <AlertCircle className="w-4 h-4 text-[#E5634D] shrink-0 mt-0.5" />
           <span>{globalError}</span>
         </div>
       )}
 
       {/* Control Bar & Options (Only visible when items exist) */}
       {queue.length > 0 && (
-        <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm space-y-4">
+        <div className="bg-white rounded-3xl border border-[#E5EAF1] p-5 sm:p-6 shadow-sm space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h3 className="text-sm font-semibold text-slate-900">
+              <h3 className="text-sm font-bold text-[#203247]">
                 Conversion Settings ({queue.length} {queue.length === 1 ? 'file' : 'files'} selected)
               </h3>
-              <p className="text-xs text-slate-600">
+              <p className="text-xs text-[#64748B]">
                 {completedCount} converted, {pendingCount} waiting
               </p>
             </div>
@@ -260,7 +264,7 @@ export default function HeicConverterTool() {
                 type="button"
                 onClick={convertAll}
                 disabled={isProcessing || pendingCount === 0}
-                className="px-4 py-2 rounded-xl bg-brand-600 text-white text-sm font-medium hover:bg-brand-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm flex items-center gap-1.5"
+                className="px-5 py-2.5 rounded-xl bg-[#3979E6] text-white text-xs font-semibold hover:bg-[#2B68D1] disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm flex items-center gap-1.5 min-h-[44px]"
               >
                 {isProcessing ? (
                   <>
@@ -279,7 +283,7 @@ export default function HeicConverterTool() {
                 <button
                   type="button"
                   onClick={downloadAllZip}
-                  className="px-3.5 py-2 rounded-xl bg-slate-100 text-slate-700 text-sm font-medium hover:bg-slate-200 transition-colors flex items-center gap-1.5"
+                  className="px-4 py-2.5 rounded-xl bg-[#36A879] hover:bg-[#2F946A] text-white text-xs font-semibold transition-all flex items-center gap-1.5 min-h-[44px]"
                 >
                   <Archive className="w-4 h-4" />
                   <span>Download ZIP ({completedCount})</span>
@@ -290,27 +294,27 @@ export default function HeicConverterTool() {
                 type="button"
                 onClick={clearAll}
                 disabled={isProcessing}
-                className="px-3 py-2 rounded-xl text-slate-600 hover:text-slate-800 hover:bg-slate-100 text-sm font-medium transition-colors"
+                className="px-3 py-2 rounded-xl text-[#64748B] hover:text-[#E5634D] hover:bg-[#FFB6A6]/10 text-xs font-medium transition-colors min-h-[44px]"
               >
                 Clear all
               </button>
             </div>
           </div>
 
-          <div className="pt-3 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="pt-3 border-t border-[#E5EAF1] grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Format Selection */}
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+              <label className="block text-xs font-semibold text-[#203247] mb-1.5">
                 Output Format
               </label>
               <div className="flex gap-2">
                 <button
                   type="button"
                   onClick={() => setOutputFormat('image/jpeg')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                  className={`px-3 py-1.5 rounded-xl text-xs font-medium border transition-colors min-h-[38px] ${
                     outputFormat === 'image/jpeg'
-                      ? 'border-brand-500 bg-brand-50 text-brand-700 font-semibold'
-                      : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                      ? 'border-[#3979E6] bg-[#E5F0FF] text-[#203247] font-semibold'
+                      : 'border-[#E5EAF1] text-[#64748B] hover:bg-[#F7FAFF]'
                   }`}
                 >
                   JPG (Recommended)
@@ -318,10 +322,10 @@ export default function HeicConverterTool() {
                 <button
                   type="button"
                   onClick={() => setOutputFormat('image/png')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                  className={`px-3 py-1.5 rounded-xl text-xs font-medium border transition-colors min-h-[38px] ${
                     outputFormat === 'image/png'
-                      ? 'border-brand-500 bg-brand-50 text-brand-700 font-semibold'
-                      : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                      ? 'border-[#3979E6] bg-[#E5F0FF] text-[#203247] font-semibold'
+                      : 'border-[#E5EAF1] text-[#64748B] hover:bg-[#F7FAFF]'
                   }`}
                 >
                   PNG (Lossless)
@@ -333,10 +337,10 @@ export default function HeicConverterTool() {
             {outputFormat === 'image/jpeg' && (
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-xs font-semibold text-slate-700">
+                  <label className="text-xs font-semibold text-[#203247]">
                     JPEG Quality
                   </label>
-                  <span className="text-xs font-mono font-medium text-slate-600">
+                  <span className="text-xs font-mono font-medium text-[#3979E6]">
                     {Math.round(quality * 100)}%
                   </span>
                 </div>
@@ -348,9 +352,9 @@ export default function HeicConverterTool() {
                   value={quality}
                   onChange={(e) => setQuality(parseFloat(e.target.value))}
                   disabled={isProcessing}
-                  className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-brand-600"
+                  className="w-full h-1.5 bg-[#E5EAF1] rounded-lg appearance-none cursor-pointer accent-[#3979E6]"
                 />
-                <div className="flex justify-between text-[10px] text-slate-600 mt-1">
+                <div className="flex justify-between text-[10px] text-[#64748B] mt-1">
                   <span>Compact (80%)</span>
                   <span>Standard (92%)</span>
                   <span>Max (100%)</span>
@@ -370,7 +374,7 @@ export default function HeicConverterTool() {
             return (
               <div
                 key={item.id}
-                className="bg-white rounded-xl border border-slate-200/80 p-4 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 transition-colors"
+                className="bg-white rounded-2xl border border-[#E5EAF1] p-4 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 transition-colors"
               >
                 {/* Left info */}
                 <div className="flex items-center gap-3 min-w-0">
@@ -378,28 +382,28 @@ export default function HeicConverterTool() {
                     <img
                       src={item.result.url}
                       alt={item.name}
-                      className="w-12 h-12 rounded-lg object-cover border border-slate-200 shrink-0 bg-slate-50"
+                      className="w-12 h-12 rounded-xl object-cover border border-[#E5EAF1] shrink-0 bg-[#F7FAFF]"
                     />
                   ) : (
-                    <div className="w-12 h-12 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400 shrink-0">
+                    <div className="w-12 h-12 rounded-xl bg-[#F7FAFF] border border-[#E5EAF1] flex items-center justify-center text-[#94A3B8] shrink-0">
                       <FileImage className="w-6 h-6" />
                     </div>
                   )}
 
                   <div className="min-w-0 space-y-0.5">
-                    <p className="text-sm font-semibold text-slate-900 truncate">
+                    <p className="text-xs font-bold text-[#203247] truncate max-w-[220px] sm:max-w-[320px]">
                       {item.name}
                     </p>
-                    <div className="flex flex-wrap items-center gap-2 text-xs text-slate-600">
+                    <div className="flex flex-wrap items-center gap-2 text-xs text-[#64748B]">
                       <span>{(item.originalSize / 1024).toFixed(1)} KB</span>
                       {item.result && (
                         <>
                           <span>→</span>
-                          <span className="font-medium text-emerald-600">
+                          <span className="font-semibold text-[#36A879]">
                             {(item.result.size / 1024).toFixed(1)} KB
                           </span>
                           {item.result.width > 0 && (
-                            <span className="text-slate-600">
+                            <span className="text-[#64748B]">
                               ({item.result.width} × {item.result.height} px)
                             </span>
                           )}
@@ -412,13 +416,13 @@ export default function HeicConverterTool() {
                 {/* Right Status & Action */}
                 <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
                   {item.status === 'pending' && (
-                    <span className="text-xs font-medium text-slate-600 px-2.5 py-1 rounded-full bg-slate-100">
+                    <span className="text-xs font-medium text-[#64748B] px-2.5 py-1 rounded-full bg-[#F7FAFF] border border-[#E5EAF1]">
                       Waiting
                     </span>
                   )}
 
                   {item.status === 'converting' && (
-                    <span className="text-xs font-medium text-brand-700 px-2.5 py-1 rounded-full bg-brand-50 flex items-center gap-1">
+                    <span className="text-xs font-semibold text-[#3979E6] px-2.5 py-1 rounded-full bg-[#E5F0FF] flex items-center gap-1">
                       <RefreshCw className="w-3 h-3 animate-spin" />
                       Converting...
                     </span>
@@ -426,15 +430,15 @@ export default function HeicConverterTool() {
 
                   {item.status === 'completed' && (
                     <>
-                      <span className="text-xs font-medium text-emerald-700 px-2.5 py-1 rounded-full bg-emerald-50 flex items-center gap-1">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                      <span className="text-xs font-semibold text-[#36A879] px-2.5 py-1 rounded-full bg-[#DDF5E9] flex items-center gap-1">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-[#36A879]" />
                         Converted
                       </span>
                       <button
                         type="button"
                         data-action="download-jpg"
                         onClick={() => downloadItem(item)}
-                        className="px-3 py-1.5 rounded-lg bg-brand-50 text-brand-700 text-xs font-medium hover:bg-brand-100 transition-colors flex items-center gap-1"
+                        className="px-3 py-1.5 rounded-xl bg-[#36A879] hover:bg-[#2F946A] text-white text-xs font-semibold transition-colors flex items-center gap-1 min-h-[36px]"
                       >
                         <Download className="w-3.5 h-3.5" />
                         <span>Download</span>
@@ -444,12 +448,12 @@ export default function HeicConverterTool() {
 
                   {item.status === 'failed' && (
                     <div className="text-right">
-                      <span className="text-xs font-medium text-rose-700 px-2.5 py-1 rounded-full bg-rose-50 flex items-center gap-1">
-                        <AlertCircle className="w-3.5 h-3.5 text-rose-600" />
+                      <span className="text-xs font-semibold text-[#E5634D] px-2.5 py-1 rounded-full bg-[#FFB6A6]/20 flex items-center gap-1">
+                        <AlertCircle className="w-3.5 h-3.5 text-[#E5634D]" />
                         Failed
                       </span>
                       {item.error && (
-                        <p className="text-[11px] text-rose-600 max-w-[200px] truncate mt-0.5" title={item.error}>
+                        <p className="text-[11px] text-[#E5634D] max-w-[200px] truncate mt-0.5" title={item.error}>
                           {item.error}
                         </p>
                       )}
@@ -460,7 +464,7 @@ export default function HeicConverterTool() {
                     type="button"
                     onClick={() => removeItem(item.id)}
                     disabled={isCurrentConverting}
-                    className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                    className="p-2 text-[#94A3B8] hover:text-[#E5634D] hover:bg-[#FFB6A6]/10 rounded-xl transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center"
                     aria-label="Remove item"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -473,15 +477,15 @@ export default function HeicConverterTool() {
       )}
 
       {/* Educational / Privacy notice callout */}
-      <div className="p-4 rounded-xl bg-slate-100/80 border border-slate-200/60 text-xs text-slate-600 flex items-start gap-3">
-        <Info className="w-4 h-4 text-slate-500 shrink-0 mt-0.5" />
+      <div className="p-4 rounded-2xl bg-white border border-[#E5EAF1] text-xs text-[#64748B] flex items-start gap-3 shadow-xs">
+        <Info className="w-4 h-4 text-[#3979E6] shrink-0 mt-0.5" />
         <div className="space-y-1">
-          <p className="font-semibold text-slate-800">
-            Privacy and Conversion Details
+          <p className="font-semibold text-[#203247]">
+            Privacy & Conversion Notes
           </p>
           <p className="leading-relaxed">
             All HEIC decoding is performed on your device via client-side WebAssembly. Your photos are never sent across the network or stored on any server.
-            Note: Original camera EXIF metadata (such as GPS coordinates and device model) is omitted during in-browser JPEG encoding.
+            Note: Original camera EXIF metadata (such as GPS coordinates) is stripped during in-browser JPEG encoding for your privacy.
           </p>
         </div>
       </div>

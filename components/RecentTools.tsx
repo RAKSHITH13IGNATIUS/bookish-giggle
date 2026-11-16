@@ -41,9 +41,9 @@ export default function RecentTools() {
   if (recentTools.length === 0) return null;
 
   return (
-    <div className="mb-12 p-5 bg-white rounded-2xl border border-slate-200/80 shadow-sm">
-      <div className="flex items-center gap-2 mb-3 text-slate-800 text-sm font-semibold">
-        <History className="w-4 h-4 text-brand-600" />
+    <div className="p-5 bg-white rounded-2xl border border-[#E5EAF1] shadow-sm">
+      <div className="flex items-center gap-2 mb-3 text-[#203247] text-xs font-semibold uppercase tracking-wider">
+        <History className="w-4 h-4 text-[#3979E6]" />
         <span>Recently Used</span>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
@@ -51,10 +51,10 @@ export default function RecentTools() {
           <Link
             key={tool.id}
             href={tool.slug}
-            className="flex items-center justify-between p-3 rounded-xl border border-slate-100 bg-slate-50/50 hover:bg-brand-50/50 hover:border-brand-200 transition-all text-xs font-medium text-slate-700"
+            className="flex items-center justify-between p-3 rounded-xl border border-[#E5EAF1] bg-[#F7FAFF] hover:bg-[#E5F0FF] hover:border-[#3979E6]/30 transition-all text-xs font-medium text-[#203247] group"
           >
-            <span className="truncate">{tool.name}</span>
-            <ArrowRight className="w-3.5 h-3.5 text-slate-400 shrink-0 ml-2" />
+            <span className="truncate group-hover:text-[#3979E6]">{tool.name}</span>
+            <ArrowRight className="w-3.5 h-3.5 text-[#64748B] group-hover:text-[#3979E6] group-hover:translate-x-0.5 transition-all shrink-0 ml-2" />
           </Link>
         ))}
       </div>

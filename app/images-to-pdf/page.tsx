@@ -1,55 +1,46 @@
 import type { Metadata } from 'next';
 import ImagesToPdfTool from '@/components/ImagesToPdf/ImagesToPdfTool';
-import { HelpCircle, Sparkles } from 'lucide-react';
+import { HelpCircle } from 'lucide-react';
 import { getCanonicalMetadata } from '@/lib/seo';
 
 export const metadata: Metadata = {
-  title: 'Images to PDF Converter - Free, High Quality, No Uploads',
+  title: 'Images to PDF Converter (JPG, PNG, WebP to PDF) - Free & Private',
   description:
-    'Convert JPG, PNG, and WebP images to a clean, professionally formatted PDF. Customize page size (A4, Letter), margins, orientation, and order. 100% private in-browser.',
+    'Convert multiple JPG, PNG, and WebP images to a single high-quality PDF document for free. Customize page sizes, margins, orientation, and reorder pages client-side.',
   keywords: [
     'images to pdf',
     'jpg to pdf',
     'png to pdf',
     'convert photo to pdf',
-    'combine pictures to pdf',
-    'free image to pdf converter',
+    'batch image to pdf',
+    'pdf maker free',
     'client side pdf converter',
   ],
   alternates: getCanonicalMetadata('/images-to-pdf'),
   openGraph: {
-    title: 'Images to PDF Converter | NimbleFile',
+    title: 'Images to PDF Converter (JPG, PNG, WebP) | NimbleFile',
     description:
-      'Turn multiple pictures into a neat PDF document. 100% private, runs entirely on your device with zero file uploads.',
+      'Convert pictures to a single clean PDF document. Reorder pages and customize margins locally in your browser.',
     url: '/images-to-pdf',
   },
 };
 
-const jsonLd = {
-  '@context': 'https://schema.org',
-  '@type': 'WebApplication',
-  name: 'NimbleFile Images to PDF Converter',
-  description:
-    'Free in-browser tool to convert multiple images to PDF with page size, margin, and layout customization.',
-  applicationCategory: 'UtilityApplication',
-  operatingSystem: 'All',
-  offers: {
-    '@type': 'Offer',
-    price: '0',
-    priceCurrency: 'USD',
-  },
-  featureList: [
-    'Multiple image selection & drag-and-drop',
-    'Interactive page reordering',
-    'A4, US Letter, and Fit-to-image page sizing',
-    'Portrait, Landscape, and Auto-orientation',
-    'Custom page margins',
-    'Live PDF preview iframe',
-    '100% client-side privacy',
-  ],
-};
-
 export default function ImagesToPdfPage() {
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    name: 'NimbleFile Images to PDF Converter',
+    applicationCategory: 'MultimediaApplication',
+    operatingSystem: 'Any (Web Browser)',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'USD',
+    },
+    description:
+      'Free in-browser tool to convert multiple images (JPG, PNG, WebP) into an organized PDF with drag-and-drop ordering, page sizing, and margin controls.',
+  };
+
   return (
     <div className="space-y-12 max-w-4xl mx-auto">
       <script
@@ -58,17 +49,12 @@ export default function ImagesToPdfPage() {
       />
 
       {/* Header */}
-      <section className="text-center max-w-3xl mx-auto space-y-3">
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-50 border border-brand-200/60 text-brand-700 text-xs font-semibold">
-          <Sparkles className="w-3.5 h-3.5" />
-          <span>Document Creation Suite</span>
-        </div>
-
-        <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
+      <section className="text-center max-w-3xl mx-auto space-y-3 pt-2">
+        <h1 className="text-3xl sm:text-4xl font-extrabold text-[#203247] tracking-tight">
           Images to PDF Converter
         </h1>
 
-        <p className="text-sm sm:text-base text-slate-600 max-w-xl mx-auto">
+        <p className="text-sm sm:text-base text-[#64748B] max-w-xl mx-auto leading-relaxed">
           Convert multiple JPG, PNG, and WebP pictures into a unified, high-resolution PDF. Reorder pages and customize paper size and margins instantly.
         </p>
       </section>
@@ -79,34 +65,34 @@ export default function ImagesToPdfPage() {
       </section>
 
       {/* Educational Guide */}
-      <section className="bg-white rounded-3xl p-8 sm:p-12 border border-slate-200 space-y-8">
+      <section className="bg-white rounded-3xl p-8 sm:p-10 border border-[#E5EAF1] shadow-sm space-y-8">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900 mb-3">
-            How to Create Clean PDFs from Images
+          <h2 className="text-xl sm:text-2xl font-bold text-[#203247] mb-2">
+            How to create clean PDFs from images
           </h2>
-          <p className="text-sm text-slate-600 leading-relaxed">
+          <p className="text-sm text-[#64748B] leading-relaxed">
             Whether preparing application documents, digitizing receipts, or compiling photo portfolios, NimbleFile builds standard ISO 32000 compliant PDF documents using pure client-side vector and raster embedding via pdf-lib.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="p-5 rounded-2xl bg-slate-50 border border-slate-100 space-y-2">
-            <h3 className="font-bold text-slate-900 text-sm">A4 & US Letter Standards</h3>
-            <p className="text-xs text-slate-500 leading-relaxed">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2 border-t border-[#E5EAF1]">
+          <div className="p-5 rounded-2xl bg-[#F7FAFF] border border-[#E5EAF1] space-y-2">
+            <h3 className="font-bold text-[#203247] text-sm">A4 & US Letter Standards</h3>
+            <p className="text-xs text-[#64748B] leading-relaxed">
               Standardized dimensions ensure your document prints cleanly on office printers without clipping headers or footers.
             </p>
           </div>
 
-          <div className="p-5 rounded-2xl bg-slate-50 border border-slate-100 space-y-2">
-            <h3 className="font-bold text-slate-900 text-sm">Auto-Orientation</h3>
-            <p className="text-xs text-slate-500 leading-relaxed">
+          <div className="p-5 rounded-2xl bg-[#F7FAFF] border border-[#E5EAF1] space-y-2">
+            <h3 className="font-bold text-[#203247] text-sm">Auto-Orientation</h3>
+            <p className="text-xs text-[#64748B] leading-relaxed">
               Our layout engine detects whether an image is wider than it is tall, automatically selecting landscape or portrait orientation per page.
             </p>
           </div>
 
-          <div className="p-5 rounded-2xl bg-slate-50 border border-slate-100 space-y-2">
-            <h3 className="font-bold text-slate-900 text-sm">Zero Server Uploads</h3>
-            <p className="text-xs text-slate-500 leading-relaxed">
+          <div className="p-5 rounded-2xl bg-[#F7FAFF] border border-[#E5EAF1] space-y-2">
+            <h3 className="font-bold text-[#203247] text-sm">Zero Server Uploads</h3>
+            <p className="text-xs text-[#64748B] leading-relaxed">
               Confidential bank statements, medical bills, and identity cards are converted 100% in your local browser memory.
             </p>
           </div>
@@ -114,27 +100,27 @@ export default function ImagesToPdfPage() {
       </section>
 
       {/* FAQs */}
-      <section className="space-y-6">
+      <section className="space-y-5">
         <div className="flex items-center gap-2">
-          <HelpCircle className="w-5 h-5 text-brand-600" />
-          <h2 className="text-xl font-bold text-slate-900">Frequently Asked Questions</h2>
+          <HelpCircle className="w-5 h-5 text-[#3979E6]" />
+          <h2 className="text-xl font-bold text-[#203247]">Frequently Asked Questions</h2>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="p-5 bg-white rounded-2xl border border-slate-200 space-y-2">
-            <h3 className="font-semibold text-sm text-slate-900">
+          <div className="p-5 bg-white rounded-2xl border border-[#E5EAF1] shadow-xs space-y-1.5">
+            <h3 className="font-bold text-sm text-[#203247]">
               Can I reorder the images after uploading?
             </h3>
-            <p className="text-xs text-slate-500 leading-relaxed">
+            <p className="text-xs text-[#64748B] leading-relaxed">
               Yes. Use the up and down arrow buttons next to each image to order the pages exactly as you want before generating your PDF.
             </p>
           </div>
 
-          <div className="p-5 bg-white rounded-2xl border border-slate-200 space-y-2">
-            <h3 className="font-semibold text-sm text-slate-900">
+          <div className="p-5 bg-white rounded-2xl border border-[#E5EAF1] shadow-xs space-y-1.5">
+            <h3 className="font-bold text-sm text-[#203247]">
               Does converting to PDF reduce image resolution?
             </h3>
-            <p className="text-xs text-slate-500 leading-relaxed">
+            <p className="text-xs text-[#64748B] leading-relaxed">
               No. Raw image data is embedded directly into the PDF container without lossy re-compression, preserving the original sharpness of your photos.
             </p>
           </div>
